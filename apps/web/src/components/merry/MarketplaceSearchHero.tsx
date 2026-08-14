@@ -88,7 +88,7 @@ function TypewriterHeading({ text }: { text: string }) {
   const complete = visibleCharacters >= characters.length;
 
   return (
-    <h1 aria-label={text} className="relative mx-auto max-w-4xl font-display font-bold leading-[.98] tracking-[-.045em] text-[#10172a]" style={{ fontSize: 'clamp(2.8rem, 5vw, 5.4rem)' }}>
+    <h1 aria-label={text} className="relative mx-auto max-w-4xl font-display font-bold leading-[1.02] tracking-[-.035em] text-[#10172a]" style={{ fontSize: 'clamp(2.35rem, 12vw, 5.4rem)' }}>
       <span aria-hidden="true" className="invisible block">{text}</span>
       <span aria-hidden="true" className="absolute inset-0 block">{characters.slice(0, visibleCharacters).join('')}{!complete && <span className="hero-type-cursor" />}</span>
     </h1>
@@ -155,7 +155,7 @@ export function MarketplaceSearchHero() {
   };
 
   return (
-    <section onWheel={shuffleOnWheel} className="relative isolate z-20 min-h-[calc(100svh-80px)] overflow-hidden bg-white text-[#10172a]">
+    <section onWheel={shuffleOnWheel} className="relative isolate z-20 min-h-[620px] overflow-hidden bg-white text-[#10172a] sm:min-h-[680px] lg:min-h-[calc(100svh-80px)]">
       <div className="pointer-events-none absolute inset-0 z-0 bg-white">
         {heroSlides.map((item, index) => (
           <img
@@ -175,27 +175,27 @@ export function MarketplaceSearchHero() {
         className="pointer-events-none absolute inset-0 z-[1]"
         style={{ background: 'linear-gradient(90deg, rgba(255,255,255,.28) 0%, rgba(255,255,255,.08) 30%, rgba(255,255,255,.12) 70%, rgba(255,255,255,.28) 100%)' }}
       />
-      <div className="relative z-[2] mx-auto flex min-h-[calc(100svh-80px)] max-w-7xl flex-col justify-center px-4 py-8 sm:px-6 lg:px-8">
+      <div className="relative z-[2] mx-auto flex min-h-[620px] max-w-7xl flex-col justify-center px-4 pb-10 pt-8 sm:min-h-[680px] sm:px-6 lg:min-h-[calc(100svh-80px)] lg:px-8">
         <div className="hero-content mx-auto w-full max-w-5xl text-center">
             <div key={slide.title} className="animate-in fade-in duration-700">
               <TypewriterHeading text={slide.title} />
-              <p className="mx-auto mt-4 max-w-2xl leading-[1.65] text-slate-600" style={{ fontSize: 'clamp(.95rem, 1vw, 1.15rem)' }}>{slide.copy}</p>
+              <p className="mx-auto mt-3 max-w-2xl leading-[1.55] text-slate-600 sm:mt-4" style={{ fontSize: 'clamp(.92rem, 1vw, 1.15rem)' }}>{slide.copy}</p>
             </div>
-            <div className="mt-4 flex items-center justify-center gap-2" role="tablist" aria-label="Merry Tales experiences">
+            <div className="mt-3 flex items-center justify-center gap-2 sm:mt-4" role="tablist" aria-label="Merry Tales experiences">
               {heroSlides.map((item, index) => <button key={item.label} type="button" role="tab" aria-selected={activeSlide === index} aria-label={`Show ${item.label.toLowerCase()} story`} onClick={() => setActiveSlide(index)} className={`h-2 rounded-full transition-all ${activeSlide === index ? 'w-10 bg-primary' : 'w-2 bg-slate-300 hover:bg-slate-500'}`} />)}
             </div>
         </div>
 
-        <form onSubmit={search} className="hero-search relative z-30 mx-auto mt-6 w-full max-w-6xl rounded-[1.35rem] border border-slate-200 bg-white p-2 text-[#10172a] shadow-[0_10px_28px_rgba(16,23,42,.12)]">
+        <form onSubmit={search} className="hero-search relative z-30 mx-auto mt-5 w-full max-w-6xl rounded-[1.15rem] border border-slate-200 bg-white p-1.5 text-[#10172a] shadow-[0_10px_28px_rgba(16,23,42,.12)] sm:mt-6 sm:rounded-[1.35rem] sm:p-2">
           <div className="grid lg:grid-cols-[1.55fr_.9fr_.85fr_auto]">
-            <label className="hero-field relative flex items-center gap-3 rounded-xl px-4 py-3 text-[#10172a] focus-within:bg-pink-50/50 focus-within:ring-2 focus-within:ring-primary/25 lg:border-r lg:border-slate-200"><Search className="h-5 w-5 shrink-0 text-primary" /><span className="min-w-0 flex-1"><span className="block text-[10px] font-black uppercase tracking-[.08em] text-[#303348]">What are you looking for?</span><input value={query} onFocus={() => setShowSuggestions(true)} onBlur={() => window.setTimeout(() => setShowSuggestions(false), 120)} onChange={(e) => setQuery(e.target.value)} className="mt-0.5 w-full bg-transparent text-sm font-medium text-[#10172a] outline-none placeholder:text-[#7b8497] placeholder:opacity-100" placeholder="e.g. Decor, photographer or venue" /></span>{showSuggestions && filtered.length > 0 && <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-50 overflow-hidden rounded-2xl border bg-white py-2 text-[#10172a] shadow-xl">{filtered.map((item) => <button key={item} type="button" onMouseDown={() => { setQuery(item); setShowSuggestions(false); }} className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-pink-50 hover:text-primary"><Search className="h-3.5 w-3.5" />{item}</button>)}</div>}</label>
-            <label className="hero-field flex items-center gap-3 rounded-xl px-4 py-3 text-[#10172a] focus-within:bg-pink-50/50 focus-within:ring-2 focus-within:ring-primary/25 lg:border-r lg:border-slate-200"><MapPin className="h-5 w-5 shrink-0 text-primary" /><span className="min-w-0 flex-1"><span className="block text-[10px] font-black uppercase tracking-[.08em] text-[#303348]">Where?</span><input value={city} onChange={(e) => setCity(e.target.value)} className="mt-0.5 w-full bg-transparent text-sm font-medium text-[#10172a] outline-none placeholder:text-[#7b8497] placeholder:opacity-100" placeholder="City or county" /></span></label>
-            <label className="hero-field flex items-center gap-3 rounded-xl px-4 py-3 text-[#10172a] focus-within:bg-pink-50/50 focus-within:ring-2 focus-within:ring-primary/25"><CalendarDays className="h-5 w-5 shrink-0 text-primary" /><span className="min-w-0 flex-1"><span className="block text-[10px] font-black uppercase tracking-[.08em] text-[#303348]">When?</span><input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-0.5 w-full bg-transparent text-sm font-medium text-[#10172a] outline-none [color-scheme:light]" /></span></label>
-            <button className="hero-search-button m-1 flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-8 font-extrabold text-white shadow-[0_10px_25px_rgba(233,75,135,.3)] transition hover:-translate-y-0.5 hover:bg-[#d92f73]"><Search className="h-4 w-4" /> Search</button>
+            <label className="hero-field relative flex items-center gap-3 rounded-xl px-3 py-3 text-[#10172a] focus-within:bg-pink-50/50 focus-within:ring-2 focus-within:ring-primary/25 sm:px-4 lg:border-r lg:border-slate-200"><Search className="h-5 w-5 shrink-0 text-primary" /><span className="min-w-0 flex-1"><span className="block text-[9px] font-black uppercase tracking-[.08em] text-[#303348] sm:text-[10px]">What are you looking for?</span><input value={query} onFocus={() => setShowSuggestions(true)} onBlur={() => window.setTimeout(() => setShowSuggestions(false), 120)} onChange={(e) => setQuery(e.target.value)} className="mt-0.5 w-full bg-transparent text-sm font-medium text-[#10172a] outline-none placeholder:text-[#7b8497] placeholder:opacity-100" placeholder="Decor, photographer or venue" /></span>{showSuggestions && filtered.length > 0 && <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-50 overflow-hidden rounded-2xl border bg-white py-2 text-[#10172a] shadow-xl">{filtered.map((item) => <button key={item} type="button" onMouseDown={() => { setQuery(item); setShowSuggestions(false); }} className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-pink-50 hover:text-primary"><Search className="h-3.5 w-3.5" />{item}</button>)}</div>}</label>
+            <label className="hero-field flex items-center gap-3 rounded-xl px-3 py-3 text-[#10172a] focus-within:bg-pink-50/50 focus-within:ring-2 focus-within:ring-primary/25 sm:px-4 lg:border-r lg:border-slate-200"><MapPin className="h-5 w-5 shrink-0 text-primary" /><span className="min-w-0 flex-1"><span className="block text-[9px] font-black uppercase tracking-[.08em] text-[#303348] sm:text-[10px]">Where?</span><input value={city} onChange={(e) => setCity(e.target.value)} className="mt-0.5 w-full bg-transparent text-sm font-medium text-[#10172a] outline-none placeholder:text-[#7b8497] placeholder:opacity-100" placeholder="City or county" /></span></label>
+            <label className="hero-field flex items-center gap-3 rounded-xl px-3 py-3 text-[#10172a] focus-within:bg-pink-50/50 focus-within:ring-2 focus-within:ring-primary/25 sm:px-4"><CalendarDays className="h-5 w-5 shrink-0 text-primary" /><span className="min-w-0 flex-1"><span className="block text-[9px] font-black uppercase tracking-[.08em] text-[#303348] sm:text-[10px]">When?</span><input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-0.5 w-full bg-transparent text-sm font-medium text-[#10172a] outline-none [color-scheme:light]" /></span></label>
+            <button className="hero-search-button m-1 flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-8 font-extrabold text-white shadow-[0_10px_25px_rgba(233,75,135,.3)] transition hover:-translate-y-0.5 hover:bg-[#d92f73] sm:min-h-12"><Search className="h-4 w-4" /> Search</button>
           </div>
         </form>
 
-        <div className="hero-popular mx-auto mt-3 flex max-w-6xl items-center justify-center gap-2 overflow-x-auto pb-1 text-xs [scrollbar-width:none]"><span className="shrink-0 font-extrabold text-slate-500">Popular:</span>{popular.map((item) => <button key={item} onClick={() => { setQuery(item); search(undefined, item); }} className="shrink-0 rounded-full border border-slate-200 bg-white/80 px-4 py-2 font-semibold text-[#10172a] shadow-sm backdrop-blur-md transition hover:border-primary/30 hover:bg-pink-50 hover:text-primary">{item}</button>)}</div>
+        <div className="hero-popular mx-auto mt-3 flex max-w-6xl items-center justify-start gap-2 overflow-x-auto pb-1 text-xs [scrollbar-width:none] sm:justify-center"><span className="shrink-0 font-extrabold text-slate-500">Popular:</span>{popular.map((item) => <button key={item} onClick={() => { setQuery(item); search(undefined, item); }} className="shrink-0 rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 font-semibold text-[#10172a] shadow-sm backdrop-blur-md transition hover:border-primary/30 hover:bg-pink-50 hover:text-primary sm:px-4 sm:py-2">{item}</button>)}</div>
       </div>
     </section>
   );

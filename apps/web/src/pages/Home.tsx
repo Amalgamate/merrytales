@@ -83,7 +83,7 @@ export function Home() {
       <FeaturedStoryVideo />
 
       {/* 3.5 Who We Are */}
-      <section className="py-24 bg-background">
+      <section className="bg-background py-16 md:py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <img src="/logo.png" alt="Merry Tales" className="h-24 md:h-32 w-auto mx-auto mb-8" />
           <h2 className="text-3xl md:text-5xl font-extrabold text-foreground mb-6">Who We Are</h2>
@@ -97,7 +97,7 @@ export function Home() {
       </section>
 
       {/* 4. Three Paths */}
-      <section className="bg-lavender-light py-24">
+      <section className="bg-lavender-light py-16 md:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-extrabold text-foreground">Everything you need for a well-run event.</h2>
@@ -135,7 +135,7 @@ export function Home() {
       </section>
 
       {/* 5. Wedding Shop */}
-      <section className="py-24 bg-background">
+      <section className="bg-background py-16 md:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-end mb-12">
             <div>
@@ -160,7 +160,7 @@ export function Home() {
       </section>
 
       {/* 6. Featured Vendors */}
-      <section className="py-24 bg-lavender-light/50 border-y border-border-soft">
+      <section className="border-y border-border-soft bg-lavender-light/50 py-16 md:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-end mb-12">
             <div>
@@ -185,7 +185,7 @@ export function Home() {
       </section>
 
       {/* 7. Event Brand Kit */}
-      <section className="py-24 overflow-hidden relative">
+      <section className="relative overflow-hidden py-16 md:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row items-center gap-16">
             <div className="w-full lg:w-1/2 order-2 lg:order-1 relative">
@@ -214,7 +214,7 @@ export function Home() {
 
       {/* 8. Real Wedding Story */}
       {featuredStory && (
-        <section className="py-24 bg-foreground text-white">
+        <section className="bg-foreground py-16 text-white md:py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row items-center gap-12">
               <div className="w-full md:w-1/2">
@@ -238,7 +238,7 @@ export function Home() {
       )}
 
       {/* 9. Wedding Planning */}
-      <section className="py-24 bg-background">
+      <section className="bg-background py-16 md:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-primary font-semibold text-sm uppercase tracking-wider mb-2">The Planning Center</p>
           <h2 className="text-3xl md:text-5xl font-extrabold text-foreground mb-6">Stay on top of every detail.</h2>
@@ -269,7 +269,7 @@ export function Home() {
       </section>
 
       {/* 10. Vendor CTA */}
-      <section className="py-24 bg-lavender-light border-y border-border-soft">
+      <section className="border-y border-border-soft bg-lavender-light py-16 md:py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-extrabold mb-4">Do you provide event products or services?</h2>
           <p className="text-lg text-gray-700 mb-8">Join the Merry Tales marketplace to reach new customers, showcase your work, and grow your business.</p>
@@ -285,7 +285,7 @@ export function Home() {
       </section>
 
       {/* 11. Final CTA */}
-      <section data-cursor-focus="light" className="py-32 bg-primary text-white relative overflow-hidden">
+      <section data-cursor-focus="light" className="relative overflow-hidden bg-primary py-20 text-white md:py-32">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
         <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
           <span className="text-5xl mb-6 block">✨</span>

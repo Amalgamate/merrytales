@@ -233,7 +233,7 @@ body {
 .hero-book-sheet:hover .hero-book-page { filter: saturate(1.03); }
 
 @media (max-width: 1023px) {
-  .hero-search { margin-top: 1.75rem; }
+  .hero-search { margin-top: 1.25rem; }
   .hero-field + .hero-field { border-top: 1px solid rgb(226 232 240); }
 }
 
