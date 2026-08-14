@@ -1,0 +1,15 @@
+CREATE TYPE "NotificationSeverity" AS ENUM ('INFO','SUCCESS','WARNING','CRITICAL');
+CREATE TYPE "OpsThreadType" AS ENUM ('GENERAL','INCIDENT','SUPPORT','VENDOR','ORDER');
+ALTER TABLE "Notification" ADD COLUMN "category" TEXT NOT NULL DEFAULT 'GENERAL', ADD COLUMN "severity" "NotificationSeverity" NOT NULL DEFAULT 'INFO', ADD COLUMN "actionUrl" TEXT, ADD COLUMN "metadata" JSONB;
+CREATE TABLE "OpsThread" ("id" TEXT NOT NULL,"type" "OpsThreadType" NOT NULL DEFAULT 'GENERAL',"title" TEXT NOT NULL,"entityType" TEXT,"entityId" TEXT,"isClosed" BOOLEAN NOT NULL DEFAULT false,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" TIMESTAMP(3) NOT NULL,CONSTRAINT "OpsThread_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "OpsParticipant" ("id" TEXT NOT NULL,"threadId" TEXT NOT NULL,"userId" TEXT NOT NULL,"lastReadAt" TIMESTAMP(3),"joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "OpsParticipant_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "OpsMessage" ("id" TEXT NOT NULL,"threadId" TEXT NOT NULL,"senderId" TEXT NOT NULL,"body" TEXT NOT NULL,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "OpsMessage_pkey" PRIMARY KEY ("id"));
+CREATE INDEX "OpsThread_updatedAt_idx" ON "OpsThread"("updatedAt");
+CREATE INDEX "OpsThread_entityType_entityId_idx" ON "OpsThread"("entityType","entityId");
+CREATE UNIQUE INDEX "OpsParticipant_threadId_userId_key" ON "OpsParticipant"("threadId","userId");
+CREATE INDEX "OpsParticipant_userId_idx" ON "OpsParticipant"("userId");
+CREATE INDEX "OpsMessage_threadId_createdAt_idx" ON "OpsMessage"("threadId","createdAt");
+ALTER TABLE "OpsParticipant" ADD CONSTRAINT "OpsParticipant_threadId_fkey" FOREIGN KEY ("threadId") REFERENCES "OpsThread"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "OpsParticipant" ADD CONSTRAINT "OpsParticipant_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "OpsMessage" ADD CONSTRAINT "OpsMessage_threadId_fkey" FOREIGN KEY ("threadId") REFERENCES "OpsThread"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "OpsMessage" ADD CONSTRAINT "OpsMessage_senderId_fkey" FOREIGN KEY ("senderId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

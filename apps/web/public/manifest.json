@@ -1,0 +1,9 @@
+{
+  "name": "Merry Tales",
+  "short_name": "Merry Tales",
+  "description": "Your Story. Our Studio. Pure Bliss.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#171735"
+}

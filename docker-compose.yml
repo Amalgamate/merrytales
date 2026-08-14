@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: merry_tales
+      POSTGRES_USER: merry_tales
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    ports:
+      - "5433:5432"
+    volumes:
+      - merry_tales_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U merry_tales"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+volumes:
+  merry_tales_postgres:

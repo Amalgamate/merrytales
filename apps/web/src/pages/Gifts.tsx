@@ -1,0 +1,38 @@
+import { ArrowRight, Baby, BriefcaseBusiness, Gift, Gift as Sparkles, Heart, Ticket, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { FloatingGiftIcons } from '@/components/merry/FloatingGiftIcons';
+
+const journeys = [
+  { icon: Heart, title: 'Wedding registries', copy: 'Bring gifts, group contributions and experiences into one shareable registry.' },
+  { icon: Gift, title: 'Send a digital gift', copy: 'Choose a gift, add a message and schedule delivery for the perfect moment.' },
+  { icon: Users, title: 'Group gifting', copy: 'Friends and family contribute towards one meaningful, approved item.' },
+  { icon: Ticket, title: 'Sponsor a moment', copy: 'Gift a guest seat, bridal service, meal, transport or event experience.' },
+  { icon: Baby, title: 'Life milestones', copy: 'Create registries for baby showers, graduations, birthdays and housewarmings.' },
+  { icon: BriefcaseBusiness, title: 'Corporate gifting', copy: 'Reward teams, clients, speakers and delegates with recipient choice.' },
+];
+
+export function Gifts() {
+  return <div className="min-h-screen pt-20 bg-[#fffdfb]">
+    <section data-cursor-focus className="relative overflow-hidden px-4 py-16 sm:px-6 md:py-24">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(236,72,153,.13),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(124,58,237,.12),transparent_38%)]" />
+      <div className="relative mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.05fr_.95fr]">
+        <div>
+          <div className="inline-flex items-center gap-3 text-primary" aria-label="Gifts that become part of the story"><span className="relative grid h-8 w-8 place-items-center border border-primary/30 before:absolute before:-left-1.5 before:-top-1.5 before:h-3 before:w-3 before:border-l before:border-t before:border-primary/60"><Sparkles className="h-4 w-4"/></span><span className="h-px w-8 bg-primary/50"/><span className="text-[11px] font-extrabold uppercase tracking-[.24em]">Gifts that become part of the story</span></div>
+          <h1 className="mt-6 max-w-3xl text-4xl font-black leading-[1.04] tracking-tight sm:text-6xl">Give the thing they will actually remember.</h1>
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-600">Shop verified gifts, build a registry, contribute as a group or sponsor an experience—from weddings and ruracio to baby showers, graduations and company celebrations.</p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row"><Button className="rounded-full px-8 py-6 font-bold">Create a registry</Button><Link to="/shop"><Button variant="outline" className="w-full rounded-full px-8 py-6 font-bold">Shop gifts</Button></Link></div>
+          <p className="mt-5 text-xs text-gray-500">Payments, vouchers and stored value will be provided through verified partners. Terms are shown before payment.</p>
+        </div>
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-[#171735] p-6 text-white shadow-2xl sm:p-10"><FloatingGiftIcons compact/><div className="relative z-10">
+          <p className="text-xs font-bold uppercase tracking-[.2em] text-pink-300">A single celebration link</p>
+          <div className="mt-6 rounded-3xl border border-white/10 bg-white/10 p-6"><div className="flex items-center gap-4"><div className="grid h-14 w-14 place-items-center rounded-2xl bg-pink-400 text-[#171735]"><Gift/></div><div><p className="font-extrabold">Njeri & Kamau’s registry</p><p className="text-sm text-white/65">12 gifts · 3 group goals</p></div></div><div className="mt-6 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full w-2/3 rounded-full bg-pink-400"/></div><div className="mt-3 flex justify-between text-xs text-white/60"><span>Family and friends</span><span>67% celebrated</span></div></div>
+          <div className="mt-4 grid grid-cols-2 gap-4 text-sm"><div className="rounded-2xl bg-white/5 p-4"><p className="text-2xl font-black">Private</p><p className="mt-1 text-white/60">Giving controls</p></div><div className="rounded-2xl bg-white/5 p-4"><p className="text-2xl font-black">Flexible</p><p className="mt-1 text-white/60">Items & experiences</p></div></div></div>
+        </div>
+      </div>
+    </section>
+    <section className="border-y bg-white px-4 py-20 sm:px-6"><div className="mx-auto max-w-7xl"><div className="max-w-2xl"><p className="text-xs font-bold uppercase tracking-[.18em] text-primary">Choose your way to give</p><h2 className="mt-3 text-3xl font-black sm:text-5xl">Every milestone deserves more than an envelope.</h2></div><div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{journeys.map(({icon:Icon,title,copy})=><article key={title} className="rounded-3xl border border-gray-100 bg-[#fffdfb] p-6 shadow-sm"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary"><Icon className="h-6 w-6"/></div><h3 className="mt-5 text-xl font-extrabold">{title}</h3><p className="mt-2 leading-7 text-gray-600">{copy}</p><button className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-primary">Coming into Merry Tales <ArrowRight className="h-4 w-4"/></button></article>)}</div></div></section>
+    <section className="bg-[#f8f6ff] px-4 py-20 sm:px-6"><div className="mx-auto max-w-7xl"><div className="max-w-3xl"><p className="text-xs font-bold uppercase tracking-[.18em] text-primary">Gift beyond things</p><h2 className="mt-3 text-3xl font-black sm:text-5xl">Flights, stays and experiences can become gifts too.</h2><p className="mt-4 text-lg leading-8 text-gray-600">Imagine gifting honeymoon flights, a domestic weekend away, guest transport or a travel contribution—fulfilled through approved experience partners.</p></div><div className="mt-9 grid gap-5 md:grid-cols-2"><div className="flex min-h-44 items-center justify-center rounded-3xl border bg-white p-8"><div className="text-center"><img src="/partners/kenya-airways.svg" alt="Kenya Airways" className="mx-auto h-12 max-w-full object-contain"/><p className="mt-5 font-extrabold">Honeymoon and destination gifting</p><span className="mt-2 inline-block rounded-full bg-amber-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700">Potential experience integration</span></div></div><div className="flex min-h-44 items-center justify-center rounded-3xl border bg-white p-8"><div className="text-center"><p className="text-4xl font-black lowercase tracking-tight text-[#e40474]">jambojet</p><p className="mt-5 font-extrabold">Domestic escapes and guest travel</p><span className="mt-2 inline-block rounded-full bg-amber-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700">Potential experience integration</span></div></div></div><p className="mt-5 text-xs text-gray-400">Illustrative targets only; no partnership or ticket availability is implied.</p></div></section>
+    <section className="px-4 py-20 sm:px-6"><div className="mx-auto max-w-5xl rounded-[2.5rem] bg-gradient-to-br from-primary to-purple-700 px-6 py-12 text-center text-white sm:px-12"><h2 className="text-3xl font-black sm:text-5xl">Are you building gifting infrastructure?</h2><p className="mx-auto mt-4 max-w-2xl text-white/80">Voucher issuers, banks, payment providers, fulfilment networks and corporate reward platforms can connect to the Merry Tales celebration ecosystem.</p><Link to="/partners"><Button className="mt-7 rounded-full bg-white px-8 py-6 font-bold text-primary hover:bg-white/90">Explore partnerships <ArrowRight className="ml-2 h-4 w-4"/></Button></Link></div></section>
+  </div>;
+}
