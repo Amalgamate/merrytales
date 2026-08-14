@@ -17,6 +17,13 @@ curl http://127.0.0.1:8080/api/health
 
 The API automatically runs `prisma migrate deploy` before starting. Database data lives in the named `merrytales_db` volume and uploads live in `merrytales_uploads`. PostgreSQL is available only to containers on the private backend network; it is not published on the host.
 
+By default the web gateway binds privately to `127.0.0.1:8080` for reverse-proxy deployments. To expose it directly as an `IP:port` app, set:
+
+```bash
+MERRYTALES_HTTP_BIND=0.0.0.0
+MERRYTALES_HTTP_PORT=3010
+```
+
 Optional M-Pesa and MobileSasa values are intentionally excluded from the base Compose file. Add them under the API service through a production override file only when real credentials are available; do not set schema-validated optional values to empty strings.
 
 ## Host reverse proxy
