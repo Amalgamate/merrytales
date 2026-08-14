@@ -167,9 +167,14 @@ export function MarketplaceSearchHero() {
           />
         ))}
       </div>
-      <div className="pointer-events-none absolute inset-0 z-[1] bg-white/72" />
-      <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(90deg,#fff_0%,rgba(255,255,255,.9)_38%,rgba(255,255,255,.7)_100%)]" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-32 bg-gradient-to-b from-transparent to-white" />
+      <div
+        className="pointer-events-none absolute inset-0 z-[1]"
+        style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,.22) 0%, rgba(255,255,255,.30) 34%, rgba(255,255,255,.48) 58%, rgba(255,255,255,.82) 78%, #ffffff 100%)' }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0 z-[1]"
+        style={{ background: 'linear-gradient(90deg, rgba(255,255,255,.28) 0%, rgba(255,255,255,.08) 30%, rgba(255,255,255,.12) 70%, rgba(255,255,255,.28) 100%)' }}
+      />
       <div className="relative z-[2] mx-auto flex min-h-[calc(100svh-80px)] max-w-7xl flex-col justify-center px-4 py-8 sm:px-6 lg:px-8">
         <div className="hero-content mx-auto w-full max-w-5xl text-center">
             <div key={slide.title} className="animate-in fade-in duration-700">
@@ -181,7 +186,7 @@ export function MarketplaceSearchHero() {
             </div>
         </div>
 
-        <form onSubmit={search} className="hero-search relative z-30 mx-auto mt-6 w-full max-w-6xl rounded-[1.35rem] border border-slate-200 bg-white p-2 text-[#10172a] shadow-[0_18px_55px_rgba(0,0,0,.24)]">
+        <form onSubmit={search} className="hero-search relative z-30 mx-auto mt-6 w-full max-w-6xl rounded-[1.35rem] border border-slate-200 bg-white p-2 text-[#10172a] shadow-[0_10px_28px_rgba(16,23,42,.12)]">
           <div className="grid lg:grid-cols-[1.55fr_.9fr_.85fr_auto]">
             <label className="hero-field relative flex items-center gap-3 rounded-xl px-4 py-3 text-[#10172a] focus-within:bg-pink-50/50 focus-within:ring-2 focus-within:ring-primary/25 lg:border-r lg:border-slate-200"><Search className="h-5 w-5 shrink-0 text-primary" /><span className="min-w-0 flex-1"><span className="block text-[10px] font-black uppercase tracking-[.08em] text-[#303348]">What are you looking for?</span><input value={query} onFocus={() => setShowSuggestions(true)} onBlur={() => window.setTimeout(() => setShowSuggestions(false), 120)} onChange={(e) => setQuery(e.target.value)} className="mt-0.5 w-full bg-transparent text-sm font-medium text-[#10172a] outline-none placeholder:text-[#7b8497] placeholder:opacity-100" placeholder="e.g. Decor, photographer or venue" /></span>{showSuggestions && filtered.length > 0 && <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-50 overflow-hidden rounded-2xl border bg-white py-2 text-[#10172a] shadow-xl">{filtered.map((item) => <button key={item} type="button" onMouseDown={() => { setQuery(item); setShowSuggestions(false); }} className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-pink-50 hover:text-primary"><Search className="h-3.5 w-3.5" />{item}</button>)}</div>}</label>
             <label className="hero-field flex items-center gap-3 rounded-xl px-4 py-3 text-[#10172a] focus-within:bg-pink-50/50 focus-within:ring-2 focus-within:ring-primary/25 lg:border-r lg:border-slate-200"><MapPin className="h-5 w-5 shrink-0 text-primary" /><span className="min-w-0 flex-1"><span className="block text-[10px] font-black uppercase tracking-[.08em] text-[#303348]">Where?</span><input value={city} onChange={(e) => setCity(e.target.value)} className="mt-0.5 w-full bg-transparent text-sm font-medium text-[#10172a] outline-none placeholder:text-[#7b8497] placeholder:opacity-100" placeholder="City or county" /></span></label>
