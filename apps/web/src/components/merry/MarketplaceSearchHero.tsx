@@ -88,7 +88,7 @@ function TypewriterHeading({ text }: { text: string }) {
   const complete = visibleCharacters >= characters.length;
 
   return (
-    <h1 aria-label={text} className="relative mx-auto max-w-4xl font-display font-bold leading-[.98] tracking-[-.045em] text-white drop-shadow-[0_3px_18px_rgba(0,0,0,.28)]" style={{ fontSize: 'clamp(2.8rem, 5vw, 5.4rem)' }}>
+    <h1 aria-label={text} className="relative mx-auto max-w-4xl font-display font-bold leading-[.98] tracking-[-.045em] text-[#10172a]" style={{ fontSize: 'clamp(2.8rem, 5vw, 5.4rem)' }}>
       <span aria-hidden="true" className="invisible block">{text}</span>
       <span aria-hidden="true" className="absolute inset-0 block">{characters.slice(0, visibleCharacters).join('')}{!complete && <span className="hero-type-cursor" />}</span>
     </h1>
@@ -155,19 +155,29 @@ export function MarketplaceSearchHero() {
   };
 
   return (
-    <section data-cursor-focus="light" onWheel={shuffleOnWheel} className="relative isolate z-20 min-h-[calc(100svh-80px)] overflow-hidden bg-[#10172a] text-white">
-      <img key={slide.image} src={slide.image} alt={slide.alt} className="hero-background-scene z-0 object-cover" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
-      <div className="pointer-events-none z-[1] bg-gradient-to-b from-[#10172a]/58 via-[#10172a]/48 to-[#10172a]/82" style={{ position: 'absolute', inset: 0 }} />
-      <div className="pointer-events-none z-[1] [background:radial-gradient(circle_at_center,transparent_0,rgba(10,15,34,.12)_48%,rgba(10,15,34,.5)_100%)]" style={{ position: 'absolute', inset: 0 }} />
-      <div className="pointer-events-none z-[1]" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 62%, rgba(255,255,255,.06) 72%, rgba(255,255,255,.42) 88%, #ffffff 100%)' }} />
+    <section onWheel={shuffleOnWheel} className="relative isolate z-20 min-h-[calc(100svh-80px)] overflow-hidden bg-white text-[#10172a]">
+      <div className="pointer-events-none absolute inset-0 z-0 bg-white">
+        {heroSlides.map((item, index) => (
+          <img
+            key={item.image}
+            src={item.image}
+            alt={activeSlide === index ? item.alt : ''}
+            aria-hidden={activeSlide !== index}
+            className={`hero-fade-image absolute inset-0 h-full w-full object-cover ${activeSlide === index ? 'opacity-100' : 'opacity-0'}`}
+          />
+        ))}
+      </div>
+      <div className="pointer-events-none absolute inset-0 z-[1] bg-white/72" />
+      <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(90deg,#fff_0%,rgba(255,255,255,.9)_38%,rgba(255,255,255,.7)_100%)]" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-32 bg-gradient-to-b from-transparent to-white" />
       <div className="relative z-[2] mx-auto flex min-h-[calc(100svh-80px)] max-w-7xl flex-col justify-center px-4 py-8 sm:px-6 lg:px-8">
         <div className="hero-content mx-auto w-full max-w-5xl text-center">
-            <div key={slide.title} className="animate-in fade-in slide-in-from-bottom-3 duration-500">
+            <div key={slide.title} className="animate-in fade-in duration-700">
               <TypewriterHeading text={slide.title} />
-              <p className="mx-auto mt-4 max-w-2xl leading-[1.65] text-white/85" style={{ fontSize: 'clamp(.95rem, 1vw, 1.15rem)' }}>{slide.copy}</p>
+              <p className="mx-auto mt-4 max-w-2xl leading-[1.65] text-slate-600" style={{ fontSize: 'clamp(.95rem, 1vw, 1.15rem)' }}>{slide.copy}</p>
             </div>
             <div className="mt-4 flex items-center justify-center gap-2" role="tablist" aria-label="Merry Tales experiences">
-              {heroSlides.map((item, index) => <button key={item.label} type="button" role="tab" aria-selected={activeSlide === index} aria-label={`Show ${item.label.toLowerCase()} story`} onClick={() => setActiveSlide(index)} className={`h-2 rounded-full transition-all ${activeSlide === index ? 'w-10 bg-primary' : 'w-2 bg-white/40 hover:bg-white/70'}`} />)}
+              {heroSlides.map((item, index) => <button key={item.label} type="button" role="tab" aria-selected={activeSlide === index} aria-label={`Show ${item.label.toLowerCase()} story`} onClick={() => setActiveSlide(index)} className={`h-2 rounded-full transition-all ${activeSlide === index ? 'w-10 bg-primary' : 'w-2 bg-slate-300 hover:bg-slate-500'}`} />)}
             </div>
         </div>
 
@@ -180,7 +190,7 @@ export function MarketplaceSearchHero() {
           </div>
         </form>
 
-        <div className="hero-popular mx-auto mt-3 flex max-w-6xl items-center justify-center gap-2 overflow-x-auto pb-1 text-xs [scrollbar-width:none]"><span className="shrink-0 font-extrabold text-white/75">Popular:</span>{popular.map((item) => <button key={item} onClick={() => { setQuery(item); search(undefined, item); }} className="shrink-0 rounded-full border border-white/20 bg-white/10 px-4 py-2 font-semibold text-white backdrop-blur-md transition hover:border-white/50 hover:bg-white hover:text-[#10172a]">{item}</button>)}</div>
+        <div className="hero-popular mx-auto mt-3 flex max-w-6xl items-center justify-center gap-2 overflow-x-auto pb-1 text-xs [scrollbar-width:none]"><span className="shrink-0 font-extrabold text-slate-500">Popular:</span>{popular.map((item) => <button key={item} onClick={() => { setQuery(item); search(undefined, item); }} className="shrink-0 rounded-full border border-slate-200 bg-white/80 px-4 py-2 font-semibold text-[#10172a] shadow-sm backdrop-blur-md transition hover:border-primary/30 hover:bg-pink-50 hover:text-primary">{item}</button>)}</div>
       </div>
     </section>
   );
