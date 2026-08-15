@@ -67,6 +67,7 @@ export default {
       },
       fontFamily: {
         sans: ['Plus Jakarta Sans', 'sans-serif'],
+        display: ['Cormorant Garamond', 'serif'],
         script: ['"Dancing Script"', 'cursive'], // Tasteful script font
       },
       boxShadow: {

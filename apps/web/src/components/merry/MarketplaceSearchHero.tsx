@@ -57,42 +57,22 @@ const heroSlides = [
   },
 ];
 
-function TypewriterHeading({ text }: { text: string }) {
-  const characters = Array.from(text);
-  const [visibleCharacters, setVisibleCharacters] = useState(characters.length);
+function HeroHeading({ slide }: { slide: (typeof heroSlides)[number] }) {
+  const headingClass = 'mx-auto max-w-[600px] font-display font-medium leading-[.94] tracking-[-.035em] text-[#101936]';
 
-  useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setVisibleCharacters(characters.length);
-      return;
-    }
+  if (slide.label === 'DIASPORA') {
+    return <h1 className={headingClass} style={{ fontSize: 'clamp(3.1rem, 6vw, 5.5rem)' }}><span className="block">Be there,</span><span className="block"><em className="not-italic text-[#ec3d83]">even</em> from afar.</span></h1>;
+  }
 
-    setVisibleCharacters(0);
-    let index = 0;
-    const startTimer = window.setTimeout(() => {
-      const typingTimer = window.setInterval(() => {
-        index += 1;
-        setVisibleCharacters(index);
-        if (index >= characters.length) window.clearInterval(typingTimer);
-      }, 42);
-      typingTimerRef = typingTimer;
-    }, 140);
-    let typingTimerRef: number | undefined;
+  return <h1 className={headingClass} style={{ fontSize: 'clamp(3rem, 5.5vw, 5.15rem)' }}><span className="block">{slide.title}</span><span className="mt-1 block text-[#ec3d83]">{slide.accent}</span></h1>;
+}
 
-    return () => {
-      window.clearTimeout(startTimer);
-      if (typingTimerRef) window.clearInterval(typingTimerRef);
-    };
-  }, [text]);
+function HeroCopy({ slide }: { slide: (typeof heroSlides)[number] }) {
+  if (slide.label === 'DIASPORA') {
+    return <p className="mx-auto mt-5 max-w-[500px] font-sans text-[16px] font-normal leading-[1.6] text-[#526078] sm:text-[18px]">Plan Cucu’s celebration, <span className="font-medium text-[#ec3d83]">fund</span> a loved one’s event, and <span className="font-medium text-[#ec3d83]">follow</span> the budget from your own currency to the moment that matters.</p>;
+  }
 
-  const complete = visibleCharacters >= characters.length;
-
-  return (
-    <h1 aria-label={text} className="relative mx-auto max-w-4xl font-display font-bold leading-[1.02] tracking-[-.035em] text-[#10172a]" style={{ fontSize: 'clamp(2.35rem, 12vw, 5.4rem)' }}>
-      <span aria-hidden="true" className="invisible block">{text}</span>
-      <span aria-hidden="true" className="absolute inset-0 block">{characters.slice(0, visibleCharacters).join('')}{!complete && <span className="hero-type-cursor" />}</span>
-    </h1>
-  );
+  return <p className="mx-auto mt-5 max-w-[500px] font-sans text-[16px] font-normal leading-[1.6] text-[#526078] sm:text-[18px]">{slide.copy}</p>;
 }
 
 export function MarketplaceSearchHero() {
@@ -177,9 +157,11 @@ export function MarketplaceSearchHero() {
       />
       <div className="relative z-[2] mx-auto flex min-h-[620px] max-w-7xl flex-col justify-center px-4 pb-10 pt-8 sm:min-h-[680px] sm:px-6 lg:min-h-[calc(100svh-80px)] lg:px-8">
         <div className="hero-content mx-auto w-full max-w-5xl text-center">
-            <div key={slide.title} className="animate-in fade-in duration-700">
-              <TypewriterHeading text={slide.title} />
-              <p className="mx-auto mt-3 max-w-2xl leading-[1.55] text-slate-600 sm:mt-4" style={{ fontSize: 'clamp(.92rem, 1vw, 1.15rem)' }}>{slide.copy}</p>
+            <div key={slide.title} className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <p className="mx-auto mb-6 inline-flex items-center rounded-full border border-[#ec3d83]/15 bg-white/75 px-3 py-1.5 font-sans text-xs font-semibold tracking-[.01em] text-[#9e285b] shadow-sm backdrop-blur-sm">{slide.label === 'DIASPORA' ? '✦ Your moments, beautifully told' : `✦ ${slide.eyebrow}`}</p>
+              <HeroHeading slide={slide} />
+              <HeroCopy slide={slide} />
+              {slide.label === 'DIASPORA' && <div className="mx-auto mt-6 flex max-w-[560px] flex-wrap justify-center gap-x-6 gap-y-2 font-sans text-[13px] font-medium text-[#101936] sm:text-sm"><span><b className="mr-1.5 font-medium text-[#ec3d83]">✦</b>Stay connected</span><span><b className="mr-1.5 font-medium text-[#ec3d83]">✦</b>Contribute with love</span><span><b className="mr-1.5 font-medium text-[#ec3d83]">✦</b>Celebrate together</span></div>}
             </div>
             <div className="mt-3 flex items-center justify-center gap-2 sm:mt-4" role="tablist" aria-label="Merry Tales experiences">
               {heroSlides.map((item, index) => <button key={item.label} type="button" role="tab" aria-selected={activeSlide === index} aria-label={`Show ${item.label.toLowerCase()} story`} onClick={() => setActiveSlide(index)} className={`h-2 rounded-full transition-all ${activeSlide === index ? 'w-10 bg-primary' : 'w-2 bg-slate-300 hover:bg-slate-500'}`} />)}
