@@ -2,10 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Boxes, CalendarDays, Clock3, FileText, LayoutGrid as Sparkles, Search, Store, TrendingUp, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { products } from '@/data/products';
-import { vendors } from '@/data/vendors';
 import { stories } from '@/data/stories';
 import { marketplaceCategories } from '@/data/marketplace';
+import { fetchProducts, fetchVendors, toProductCard, toVendorCard } from '@/lib/marketplace';
 
 type SearchKind = 'Product' | 'Vendor' | 'Category' | 'Story' | 'Destination';
 type SearchRecord = { id: string; title: string; subtitle: string; kind: SearchKind; href: string; image?: string; keywords: string; priority?: number };
@@ -45,15 +44,34 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
+  const [liveProducts, setLiveProducts] = useState<SearchRecord[]>([]);
+  const [liveVendors, setLiveVendors] = useState<SearchRecord[]>([]);
   const [recent, setRecent] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem('merry_tales_recent_searches') ?? '[]'); } catch { return []; } });
 
+  useEffect(() => {
+    if (!open) return;
+    Promise.all([fetchProducts({ limit: 12 }), fetchVendors({ limit: 8 })]).then(([productResult, vendorResult]) => {
+      setLiveProducts(productResult.items.map((item) => {
+        const card = toProductCard(item);
+        return { id: card.id, title: card.name, subtitle: `${card.subcategory} · From KES ${card.startingPrice.toLocaleString()}`, kind: 'Product' as const, href: `/shop/${card.slug}`, image: card.image, keywords: `${card.category} ${card.subcategory}`, priority: card.bestseller ? 6 : 2 };
+      }));
+      setLiveVendors(vendorResult.items.map((item) => {
+        const card = toVendorCard(item);
+        return { id: card.id, title: card.name, subtitle: `${card.category} · ${card.location} · ${card.rating}★`, kind: 'Vendor' as const, href: `/vendors/${card.slug}`, image: card.image, keywords: `${card.category} ${card.location} verified`, priority: 5 };
+      }));
+    }).catch(() => {
+      setLiveProducts([]);
+      setLiveVendors([]);
+    });
+  }, [open]);
+
   const records = useMemo<SearchRecord[]>(() => [
-    ...products.map((item) => ({ id: item.id, title: item.name, subtitle: `${item.subcategory} · From KES ${item.startingPrice.toLocaleString()}`, kind: 'Product' as const, href: `/shop/${item.slug}`, image: item.image, keywords: `${item.category} ${item.subcategory} customizable ${item.digital ? 'digital' : 'physical'}`, priority: item.bestseller ? 6 : 2 })),
-    ...vendors.map((item) => ({ id: item.id, title: item.name, subtitle: `${item.category} · ${item.location} · ${item.rating}★`, kind: 'Vendor' as const, href: `/vendors/${item.slug}`, image: item.image, keywords: `${item.category} ${item.location} verified event professional`, priority: item.verified ? 5 : 2 })),
+    ...liveProducts,
+    ...liveVendors,
     ...marketplaceCategories.flatMap((category) => [{ id: category.slug, title: category.name, subtitle: category.description, kind: 'Category' as const, href: `/shop?category=${encodeURIComponent(category.name)}`, keywords: `${category.name} ${category.subcategories.join(' ')}`, priority: 3 }, ...category.subcategories.map((item) => ({ id: `${category.slug}-${item}`, title: item, subtitle: category.name, kind: 'Category' as const, href: `/shop?q=${encodeURIComponent(item)}`, keywords: `${item} ${category.name}`, priority: 1 }))]),
     ...stories.map((item) => ({ id: item.id, title: item.title, subtitle: `${item.category} · ${item.date}`, kind: 'Story' as const, href: `/stories/${item.slug}`, image: item.image, keywords: `${item.category} ${item.shortDescription}`, priority: 2 })),
     ...destinations,
-  ], []);
+  ], [liveProducts, liveVendors]);
 
   const results = useMemo(() => records.map((record) => ({ record, score: score(record, query) })).filter((item) => item.score > 0).sort((a, b) => b.score - a.score).slice(0, query ? 18 : 8).map((item) => item.record), [records, query]);
   const grouped = kindOrder.map((kind) => ({ kind, items: results.filter((item) => item.kind === kind) })).filter((group) => group.items.length);

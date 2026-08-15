@@ -14,15 +14,23 @@ const registerSchema = z.object({
   password: z.string().min(10).max(128),
   firstName: z.string().trim().min(2).max(60),
   lastName: z.string().trim().min(2).max(60),
+  referralCode: z.string().trim().toUpperCase().regex(/^MT-[A-Z0-9]{6}$/).optional(),
 });
+
+async function nextReferralCode() {
+  let code = '';
+  do { code = `MT-${Math.random().toString(36).slice(2, 8).toUpperCase()}`; } while (await db.user.findUnique({ where: { referralCode: code } }));
+  return code;
+}
 
 router.post('/register', async (req, res, next) => {
   try {
     const input = registerSchema.parse(req.body);
     const existing = await db.user.findFirst({ where: { OR: [{ email: input.email }, ...(input.phone ? [{ phone: input.phone }] : [])] } });
     if (existing) return res.status(409).json({ error: { code: 'ACCOUNT_EXISTS', message: 'An account already exists with these details.' } });
-    const { password, ...profile } = input;
-    const user = await db.user.create({ data: { ...profile, passwordHash: await hashPassword(password) }, select: publicUser });
+    const { password, referralCode, ...profile } = input;
+    const referrer = referralCode ? await db.user.findFirst({ where: { referralCode, role: UserRole.CUSTOMER, status: 'ACTIVE' } }) : null;
+    const user = await db.user.create({ data: { ...profile, passwordHash: await hashPassword(password), referralCode: await nextReferralCode(), ...(referrer ? { referralReceived: { create: { code: referralCode!, referrerId: referrer.id } } } : {}) }, select: publicUser });
     const accessToken = signAccessToken({ id: user.id, email: user.email, role: user.role });
     return res.status(201).json({ data: { user, accessToken } });
   } catch (error) { next(error); }

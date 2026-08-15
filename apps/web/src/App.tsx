@@ -38,6 +38,8 @@ import { QuoteReview } from './pages/QuoteReview';
 import { AIChat } from './components/merry/AIChat';
 import { EngagementOverlays } from './components/merry/EngagementOverlays';
 import { NewsletterAction } from './pages/NewsletterAction';
+import { Referrals } from './pages/app/Referrals';
+import { ReferralLanding } from './pages/ReferralLanding';
 
 // Vendor Pages
 import { VendorJoin } from './pages/vendor/VendorJoin';
@@ -81,6 +83,7 @@ function App() {
           <Route path="/vendor/join" element={<VendorJoin />} />
           <Route path="/gifts" element={<Gifts />} />
           <Route path="/partners" element={<Partners />} />
+          <Route path="/r/:code" element={<ReferralLanding />} />
           <Route path="/shop/category/*" element={<Shop />} />
           <Route path="/discover/*" element={<Home />} />
           <Route path="*" element={<NotFound />} />
@@ -105,6 +108,7 @@ function App() {
             <Route path="printables" element={<Printables />} />
             <Route path="memories" element={<Memories />} />
             <Route path="orders" element={<Orders />} />
+            <Route path="referrals" element={<Referrals />} />
           </Route>
         </Route>
         <Route element={<ProtectedRoute roles={['SUPERADMIN', 'ADMIN', 'STAFF']} />}><Route path="/admin" element={<AdminDashboard />} /></Route>

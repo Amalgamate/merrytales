@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, CalendarHeart, Mail, Package, Camera, FileText, Bell, Settings, LogOut, Landmark } from 'lucide-react';
+import { LayoutDashboard, CalendarHeart, Mail, Package, Camera, FileText, Bell, Settings, LogOut, Landmark, Gift } from 'lucide-react';
 import { MobileBottomNav } from '../merry/MobileBottomNav';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -16,6 +16,7 @@ export function AppLayout() {
     { name: 'Printables', href: '/app/printables', icon: FileText },
     { name: 'Memories', href: '/app/memories', icon: Camera },
     { name: 'Orders', href: '/app/orders', icon: Package },
+    { name: 'Refer & Earn', href: '/app/referrals', icon: Gift },
   ];
 
   return (

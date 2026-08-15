@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { EventType } from '@prisma/client';
+import { EventType, ReferralRewardKind, ReferralStatus } from '@prisma/client';
 import { z } from 'zod';
 import { db } from '../db';
 import { requireAuth } from '../middleware/auth';
@@ -20,6 +20,9 @@ const eventSchema = z.object({
   currency: z.string().length(3).default('KES'),
   budget: z.coerce.number().nonnegative().optional(),
   guestTarget: z.coerce.number().int().nonnegative().optional(),
+  celebrationType: z.string().trim().min(2).max(60).default('WEDDING'),
+  traditions: z.array(z.string().trim().min(2).max(60)).max(12).default([]),
+  planningPreferences: z.array(z.string().trim().min(2).max(80)).max(12).default([]),
 });
 
 router.get('/', async (req, res, next) => {
@@ -33,6 +36,14 @@ router.post('/', async (req, res, next) => {
   try {
     const input = eventSchema.parse(req.body);
     const event = await db.event.create({ data: { ...input, eventDate: input.eventDate ? new Date(input.eventDate) : undefined, ownerId: req.user!.id } });
+    const referral = await db.referral.findUnique({ where: { refereeId: req.user!.id } });
+    if (referral?.status === ReferralStatus.PENDING) {
+      const qualified = await db.referral.updateMany({ where: { id: referral.id, status: ReferralStatus.PENDING }, data: { status: ReferralStatus.QUALIFIED, qualifiedAt: new Date() } });
+      if (qualified.count) {
+        const expiresAt = new Date(); expiresAt.setDate(expiresAt.getDate() + 180);
+        await db.referralCredit.createMany({ data: [{ userId: referral.referrerId, referralId: referral.id, amount: referral.referrerCredit, kind: ReferralRewardKind.PLAN_COMPLETION, expiresAt }, { userId: referral.refereeId, referralId: referral.id, amount: referral.refereeCredit, kind: ReferralRewardKind.PLAN_COMPLETION, expiresAt }], skipDuplicates: true });
+      }
+    }
     res.status(201).json({ data: event });
   } catch (error) { next(error); }
 });

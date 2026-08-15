@@ -1,4 +1,4 @@
-import { DeliveryMethod, FulfillmentStatus, OrderStatus, UserRole } from '@prisma/client';
+import { DeliveryMethod, FulfillmentStatus, ListingModerationStatus, OrderStatus, UserRole, VendorStatus } from '@prisma/client';
 import { Router } from 'express';
 import { z } from 'zod';
 import { db } from '../db';
@@ -72,8 +72,19 @@ router.post('/', async (req, res, next) => {
   try {
     const input = z.object({ items: z.array(z.object({ productId: z.string(), quantity: z.number().int().min(1).max(1000) })).min(1), delivery: deliverySchema.optional() }).parse(req.body);
     const ids = [...new Set(input.items.map((item) => item.productId))];
-    const products = await db.product.findMany({ where: { OR: [{ id: { in: ids } }, { slug: { in: ids } }], isActive: true } });
-    if (products.length !== ids.length) return res.status(400).json({ error: { code: 'INVALID_PRODUCTS', message: 'One or more products are unavailable.' } });
+    const products = await db.product.findMany({
+      where: {
+        OR: [{ id: { in: ids } }, { slug: { in: ids } }],
+        isActive: true,
+        moderationStatus: ListingModerationStatus.APPROVED,
+      },
+      include: { vendor: true },
+    });
+    if (products.length !== ids.length) return res.status(400).json({ error: { code: 'INVALID_PRODUCTS', message: 'One or more listings are unavailable or not approved for checkout.' } });
+
+    const unverified = products.find((product) => product.vendorId && product.vendor?.status !== VendorStatus.VERIFIED);
+    if (unverified) return res.status(400).json({ error: { code: 'VENDOR_NOT_VERIFIED', message: 'One or more items are from vendors that are not verified for checkout.' } });
+
     const byId = new Map(products.flatMap((product) => [[product.id, product] as const, [product.slug, product] as const]));
     const invalidQuantity = input.items.find((item) => { const product = byId.get(item.productId)!; return item.quantity < product.minimumOrder || (product.maximumOrder !== null && item.quantity > product.maximumOrder) || (product.stockQuantity !== null && item.quantity > product.stockQuantity); });
     if (invalidQuantity) return res.status(400).json({ error: { code: 'INVALID_QUANTITY', message: 'A listing quantity is outside its order limits or current stock.' } });

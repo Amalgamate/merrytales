@@ -1,0 +1,24 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Check, Copy, Gift, Share2, UsersRound } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { apiRequest } from '@/lib/api';
+
+type Referral = { id: string; name: string; status: 'PENDING' | 'QUALIFIED'; createdAt: string; qualifiedAt: string | null };
+type ReferralSummary = { code: string; balance: number; earned: number; pending: number; referrals: Referral[] };
+
+export function Referrals() {
+  const [summary, setSummary] = useState<ReferralSummary | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => { apiRequest<ReferralSummary>('/referrals/me').then(setSummary).catch(cause => setError(cause instanceof Error ? cause.message : 'Unable to load referrals.')); }, []);
+  const link = useMemo(() => summary ? `${window.location.origin}/r/${summary.code}` : '', [summary]);
+  const copy = async () => { if (!link) return; await navigator.clipboard.writeText(link); setCopied(true); window.setTimeout(() => setCopied(false), 1800); };
+  const share = async () => { if (navigator.share) { await navigator.share({ title: 'Plan with Merry Tales', text: 'Start your event plan with my link and we both earn KES 200 Merry Credit.', url: link }); } else { await copy(); } };
+  if (error) return <div className="rounded-2xl border border-red-100 bg-red-50 p-5 text-sm text-red-700">{error}</div>;
+  if (!summary) return <div className="rounded-2xl border bg-white p-8 text-center text-sm text-slate-500">Loading your referral rewards…</div>;
+  return <div className="space-y-7 pt-4">
+    <section className="relative overflow-hidden rounded-[30px] bg-[#171735] p-7 text-white md:p-10"><div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-primary/30 blur-3xl" /><div className="relative max-w-2xl"><span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold"><Gift className="h-4 w-4 text-primary" /> Refer & earn</span><h1 className="mt-4 text-3xl font-extrabold">Give KES 200. Get KES 200.</h1><p className="mt-3 text-white/75">You both earn KES 200 when they create their first plan. When they complete a first purchase, you earn a further KES 500 and they receive KES 300.</p><div className="mt-6 flex flex-col gap-3 sm:flex-row"><div className="flex min-w-0 flex-1 items-center rounded-xl bg-white px-4 py-3 text-sm font-bold text-[#171735]"><span className="truncate">{link}</span></div><Button onClick={() => void copy()} variant="secondary" className="rounded-xl font-bold">{copied ? <Check /> : <Copy />}{copied ? 'Copied' : 'Copy link'}</Button><Button onClick={() => void share()} className="rounded-xl font-bold"><Share2 />Share</Button></div><p className="mt-3 text-xs text-white/55">Your code: {summary.code} · Credits expire after 180 days and are not cash withdrawals.</p></div></section>
+    <section className="grid gap-4 sm:grid-cols-3"><div className="rounded-2xl border bg-white p-5"><p className="text-xs font-bold uppercase tracking-wider text-slate-500">Merry Credit</p><p className="mt-2 text-3xl font-extrabold text-[#171735]">KES {summary.balance.toLocaleString()}</p><p className="mt-1 text-xs text-slate-500">Ready for future purchases</p></div><div className="rounded-2xl border bg-white p-5"><p className="text-xs font-bold uppercase tracking-wider text-slate-500">Qualified referrals</p><p className="mt-2 text-3xl font-extrabold text-[#171735]">{summary.earned}</p><p className="mt-1 text-xs text-slate-500">Both earned credit</p></div><div className="rounded-2xl border bg-white p-5"><p className="text-xs font-bold uppercase tracking-wider text-slate-500">Pending</p><p className="mt-2 text-3xl font-extrabold text-[#171735]">{summary.pending}</p><p className="mt-1 text-xs text-slate-500">Waiting for a first plan</p></div></section>
+    <section className="rounded-3xl border bg-white p-6"><div className="flex items-center gap-3"><UsersRound className="h-5 w-5 text-primary" /><div><h2 className="font-extrabold">Your referrals</h2><p className="text-sm text-slate-500">Rewards are approved after a new planner creates their first event.</p></div></div><div className="mt-5 divide-y">{summary.referrals.length ? summary.referrals.map(referral => <div key={referral.id} className="flex items-center justify-between py-4 text-sm"><div><p className="font-bold text-[#171735]">{referral.name}</p><p className="mt-1 text-xs text-slate-500">Joined {new Date(referral.createdAt).toLocaleDateString()}</p></div><span className={`rounded-full px-3 py-1 text-xs font-bold ${referral.status === 'QUALIFIED' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>{referral.status === 'QUALIFIED' ? 'KES 200 earned' : 'Pending plan'}</span></div>) : <p className="py-8 text-center text-sm text-slate-500">Share your link to start earning Merry Credit.</p>}</div></section>
+  </div>;
+}

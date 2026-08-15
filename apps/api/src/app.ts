@@ -17,6 +17,8 @@ import { financeRouter } from './routes/finance';
 import { commercialRouter } from './routes/commercial';
 import { assistantRouter } from './routes/assistant';
 import { engagementRouter } from './routes/engagement';
+import { referralsRouter } from './routes/referrals';
+import { settlementsRouter } from './routes/settlements';
 import { errorHandler, notFound } from './middleware/errors';
 
 export const app = express();
@@ -38,6 +40,8 @@ app.use('/api/finance', financeRouter);
 app.use('/api/commercial', commercialRouter);
 app.use('/api/assistant', assistantRouter);
 app.use('/api/engagement', engagementRouter);
+app.use('/api/referrals', referralsRouter);
+app.use('/api/settlements', settlementsRouter);
 app.use('/api/leads', leadsRouter);
 app.use('/api/operations', operationsRouter);
 app.use('/api/notifications', notificationsRouter);

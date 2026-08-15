@@ -1,4 +1,4 @@
-import { LedgerAccountType, LedgerSide, ListingType, PriceUnit, PrismaClient, QuoteStatus, UserRole, VendorStatus } from '@prisma/client';
+import { LedgerAccountType, LedgerSide, ListingModerationStatus, ListingType, PriceUnit, PrismaClient, QuoteStatus, SubscriptionStatus, UserRole, VendorStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const db = new PrismaClient();
@@ -73,14 +73,27 @@ async function main() {
     ['branded-event-hoodie','Branded Event Hoodie','Fashion & Merchandise',2800,false],
     ['personalised-jewellery-gift','Personalised Jewellery Gift Set','Jewellery & Accessories',5500,false],
   ] as const;
-  for (const [slug, name, category, price, isDigital] of products) await db.product.upsert({ where: { slug }, update: { name, category, price, isDigital }, create: { name, slug, category, price, isDigital } });
+  for (const [slug, name, category, price, isDigital] of products) {
+    await db.product.upsert({
+      where: { slug },
+      update: { name, category, price, isDigital, moderationStatus: ListingModerationStatus.APPROVED, approvedAt: new Date(), isActive: true },
+      create: { name, slug, category, price, isDigital, moderationStatus: ListingModerationStatus.APPROVED, approvedAt: new Date(), isActive: true },
+    });
+  }
   const listingSeeds=[
     ['mfalme-executive-rides','stretch-limousine-daily-hire','Stretch Limousine Daily Hire','Limousine Hire',45000,ListingType.RENTAL,PriceUnit.DAY,4,15000],
     ['nairobi-event-hosts','corporate-gala-mc','Corporate Gala MC','Event MCs',35000,ListingType.SERVICE,PriceUnit.EVENT,null,null],
     ['big-day-print-hub','branded-conference-kit','Branded Conference Kit','Corporate Printing',3200,ListingType.PRODUCT,PriceUnit.ITEM,500,null],
     ['sherehe-event-rentals','complete-100-guest-setup','Complete 100-Guest Event Setup','Event Rentals',120000,ListingType.PACKAGE,PriceUnit.EVENT,3,30000],
   ] as const;
-  for(const [vendorSlug,slug,name,category,price,listingType,priceUnit,stockQuantity,depositAmount] of listingSeeds){const vendor=await db.vendorProfile.findUnique({where:{slug:vendorSlug}});if(vendor)await db.product.upsert({where:{slug},update:{vendorId:vendor.id,listingType,priceUnit,stockQuantity,depositAmount,serviceArea:'Nairobi and surrounding counties'},create:{vendorId:vendor.id,slug,name,category,price,listingType,priceUnit,stockQuantity,depositAmount,serviceArea:'Nairobi and surrounding counties',leadTimeDays:3,description:`Verified ${listingType.toLowerCase()} listing from ${vendor.businessName}.`}});}
+  for(const [vendorSlug,slug,name,category,price,listingType,priceUnit,stockQuantity,depositAmount] of listingSeeds){const vendor=await db.vendorProfile.findUnique({where:{slug:vendorSlug}});if(vendor)await db.product.upsert({where:{slug},update:{vendorId:vendor.id,listingType,priceUnit,stockQuantity,depositAmount,serviceArea:'Nairobi and surrounding counties',moderationStatus:ListingModerationStatus.APPROVED,approvedAt:new Date(),isActive:true},create:{vendorId:vendor.id,slug,name,category,price,listingType,priceUnit,stockQuantity,depositAmount,serviceArea:'Nairobi and surrounding counties',leadTimeDays:3,description:`Verified ${listingType.toLowerCase()} listing from ${vendor.businessName}.`,moderationStatus:ListingModerationStatus.APPROVED,approvedAt:new Date(),isActive:true}});}
+
+  const subscriptionEndsAt = new Date();
+  subscriptionEndsAt.setFullYear(subscriptionEndsAt.getFullYear() + 1);
+  await db.vendorProfile.updateMany({
+    where: { status: VendorStatus.VERIFIED },
+    data: { subscriptionStatus: SubscriptionStatus.ACTIVE, subscriptionEndsAt, taxComplianceStatus: 'VERIFIED', etimsStatus: 'VERIFIED', taxComplianceExpiresAt: subscriptionEndsAt },
+  });
 
   const envelopeSeeds = [
     ['Venue & catering', 520000, '#E83E83'],

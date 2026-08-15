@@ -1,11 +1,11 @@
-import { Star, ArrowRight, ArrowUpRight, Heart, Calendar, Users, ShoppingBag, Gift, Ticket, Building2, Plug, BadgeCheck, ShieldCheck, CreditCard, Clock3 } from 'lucide-react';
+import { Star, ArrowRight, ArrowUpRight, Heart, Calendar, Users, ShoppingBag, Gift, Ticket, Building2, Plug, BadgeCheck, ShieldCheck, CreditCard, Clock3, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { VendorCard } from '@/components/merry/VendorCard';
 import { ProductCard } from '@/components/merry/ProductCard';
-import { vendors } from '@/data/vendors';
-import { products } from '@/data/products';
 import { stories } from '@/data/stories';
+import { fetchProducts, fetchVendors, toProductCard, toVendorCard, type ProductCardModel, type VendorCardModel } from '@/lib/marketplace';
 import { MarketplaceSearchHero } from '@/components/merry/MarketplaceSearchHero';
 import { FeaturedStoryVideo } from '@/components/merry/FeaturedStoryVideo';
 import { FloatingGiftIcons } from '@/components/merry/FloatingGiftIcons';
@@ -22,9 +22,23 @@ const discoveryCategories = [
 ];
 
 export function Home() {
-  const featuredVendors = vendors.slice(0, 3);
-  const featuredProducts = products.filter(p => p.bestseller).slice(0, 4);
+  const [featuredVendors, setFeaturedVendors] = useState<VendorCardModel[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<ProductCardModel[]>([]);
+  const [marketLoading, setMarketLoading] = useState(true);
   const featuredStory = stories[0];
+
+  useEffect(() => {
+    Promise.all([fetchVendors({ limit: 3 }), fetchProducts({ limit: 8 })])
+      .then(([vendorResult, productResult]) => {
+        setFeaturedVendors(vendorResult.items.slice(0, 3).map(toVendorCard));
+        setFeaturedProducts(productResult.items.filter((item) => Number(item.price) >= 2500).slice(0, 4).map(toProductCard));
+      })
+      .catch(() => {
+        setFeaturedVendors([]);
+        setFeaturedProducts([]);
+      })
+      .finally(() => setMarketLoading(false));
+  }, []);
 
   return (
     <div className="pt-20 min-h-screen">
@@ -148,9 +162,9 @@ export function Home() {
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-             {featuredProducts.map(product => (
-               <ProductCard key={product.id} {...product} />
-             ))}
+            {marketLoading ? <div className="col-span-full grid min-h-40 place-items-center text-gray-400"><Loader2 className="h-8 w-8 animate-spin" /></div> : featuredProducts.length ? featuredProducts.map(product => (
+              <ProductCard key={product.id} {...product} />
+            )) : <p className="col-span-full text-center text-gray-500">Verified listings appear here as vendors go live.</p>}
           </div>
           
           <Link to="/shop" className="sm:hidden mt-8 block">
@@ -173,9 +187,9 @@ export function Home() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-             {featuredVendors.map(vendor => (
-               <VendorCard key={vendor.id} {...vendor} />
-             ))}
+            {marketLoading ? <div className="col-span-full grid min-h-40 place-items-center text-gray-400"><Loader2 className="h-8 w-8 animate-spin" /></div> : featuredVendors.length ? featuredVendors.map(vendor => (
+              <VendorCard key={vendor.id} {...vendor} />
+            )) : <p className="col-span-full text-center text-gray-500">Verified vendors appear here as onboarding completes.</p>}
           </div>
           
           <Link to="/vendors" className="sm:hidden mt-8 block">
