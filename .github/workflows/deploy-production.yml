@@ -47,6 +47,6 @@ jobs:
             git pull --ff-only origin main
             sudo -n docker compose up -d --build
             sudo -n docker compose ps
-            sudo -n docker compose exec -T api node -e "fetch('http://127.0.0.1:3001/api/health').then(response => { if (!response.ok) process.exit(1); return response.text(); }).then(console.log)"
+            sudo -n docker compose exec -T api wget --quiet --tries=1 --spider http://127.0.0.1:3001/api/health
             sudo -n docker compose exec -T web wget --quiet --tries=1 --spider http://127.0.0.1/healthz
           "
