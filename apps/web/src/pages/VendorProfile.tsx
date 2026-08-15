@@ -1,197 +1,698 @@
-import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { CheckCircle, ChevronLeft, Clock, Heart, Loader2, MapPin, Share, Star } from 'lucide-react';
-import { FaWhatsapp } from 'react-icons/fa';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { fetchVendor, formatResponseTime, submitLead, toProductCard, vendorImage, type ApiVendor } from '@/lib/marketplace';
-import { ProductCard } from '@/components/merry/ProductCard';
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import {
+  ArrowRight,
+  BadgeCheck,
+  CheckCircle2,
+  ChevronLeft,
+  Clock3,
+  Copy,
+  Loader2,
+  MapPin,
+  PackageOpen,
+  Share2,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Store,
+  X,
+} from "lucide-react";
+import { FaWhatsapp } from "react-icons/fa";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  fetchVendor,
+  formatResponseTime,
+  submitLead,
+  toProductCard,
+  vendorImage,
+  type ApiVendor,
+} from "@/lib/marketplace";
+import { ProductCard } from "@/components/merry/ProductCard";
+
+type ShopSection = "shop" | "services" | "reviews";
 
 export function VendorProfile() {
   const { slug } = useParams();
   const [vendor, setVendor] = useState<ApiVendor | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [section, setSection] = useState<ShopSection>("shop");
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteBusy, setQuoteBusy] = useState(false);
-  const [quoteNotice, setQuoteNotice] = useState('');
-  const [quoteForm, setQuoteForm] = useState({ name: '', phone: '', email: '', eventDate: '', message: '' });
+  const [notice, setNotice] = useState("");
+  const [quoteForm, setQuoteForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    eventDate: "",
+    message: "",
+  });
 
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
     fetchVendor(slug)
       .then(setVendor)
-      .catch((cause) => setError(cause instanceof Error ? cause.message : 'Vendor not found.'))
+      .catch((cause) =>
+        setError(cause instanceof Error ? cause.message : "Shop not found."),
+      )
       .finally(() => setLoading(false));
   }, [slug]);
 
   const sendQuote = async () => {
     if (!vendor) return;
     setQuoteBusy(true);
-    setQuoteNotice('');
+    setNotice("");
     try {
       await submitLead({
         vendorId: vendor.id,
         name: quoteForm.name,
         phone: quoteForm.phone || undefined,
         email: quoteForm.email || undefined,
-        eventDate: quoteForm.eventDate ? new Date(`${quoteForm.eventDate}T09:00:00`).toISOString() : undefined,
-        message: quoteForm.message || `Quote request for ${vendor.businessName}.`,
+        eventDate: quoteForm.eventDate
+          ? new Date(`${quoteForm.eventDate}T09:00:00`).toISOString()
+          : undefined,
+        message:
+          quoteForm.message || `Quote request for ${vendor.businessName}.`,
       });
-      setQuoteNotice('Request sent. The vendor will respond through Merry Tales.');
+      setNotice(
+        "Your request is with the shop. They will respond through Merry Tales.",
+      );
       setQuoteOpen(false);
+      setQuoteForm({
+        name: "",
+        phone: "",
+        email: "",
+        eventDate: "",
+        message: "",
+      });
     } catch (cause) {
-      setQuoteNotice(cause instanceof Error ? cause.message : 'Unable to send request.');
+      setNotice(
+        cause instanceof Error ? cause.message : "Unable to send your request.",
+      );
     } finally {
       setQuoteBusy(false);
     }
   };
 
-  if (loading) return <div className="grid min-h-screen place-items-center pt-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  if (!vendor || error) return (
-    <div className="pt-32 text-center min-h-screen">
-      <h1 className="text-3xl font-bold mb-4">{error || 'Vendor Not Found'}</h1>
-      <Link to="/vendors"><Button className="rounded-full">Back to Vendors</Button></Link>
-    </div>
-  );
+  const shareShop = async () => {
+    if (!vendor) return;
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: vendor.businessName,
+          text: `Discover ${vendor.businessName} on Merry Tales`,
+          url,
+        });
+        return;
+      }
+      await navigator.clipboard?.writeText(url);
+      setNotice("Shop link copied — ready to share.");
+    } catch {
+      // Share cancellation is not an error a customer needs to see.
+    }
+  };
+
+  if (loading)
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#fbfafc] pt-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  if (!vendor || error)
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#fbfafc] px-5 pt-20 text-center">
+        <div>
+          <Store className="mx-auto h-10 w-10 text-primary" />
+          <h1 className="mt-5 text-3xl font-black">
+            {error || "Shop not found"}
+          </h1>
+          <p className="mt-2 text-gray-500">
+            This shop may be unavailable or its link may have changed.
+          </p>
+          <Link to="/vendors">
+            <Button className="mt-6 rounded-xl">Explore vendors</Button>
+          </Link>
+        </div>
+      </div>
+    );
 
   const image = vendorImage(vendor.category);
   const responseTime = formatResponseTime(vendor.responseMinutes);
-  const whatsappUrl = vendor.whatsapp ? `https://wa.me/${vendor.whatsapp.replace(/\D/g, '')}` : undefined;
+  const whatsappUrl = vendor.whatsapp
+    ? `https://wa.me/${vendor.whatsapp.replace(/\D/g, "")}`
+    : undefined;
+  const initials = vendor.businessName
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase();
+  const products = vendor.products ?? [];
+  const services = vendor.services ?? [];
+  const shopSummary =
+    vendor.description ??
+    `${vendor.businessName} is a Merry Tales shop for ${vendor.category.toLowerCase()} in ${vendor.city}. Explore their offers and request a tailored quote for your event.`;
+  const tabs: { id: ShopSection; label: string; count?: number }[] = [
+    { id: "shop", label: "Shop", count: products.length },
+    { id: "services", label: "Services", count: services.length },
+    { id: "reviews", label: "Reviews", count: vendor.reviewCount },
+  ];
+  const startingPrice = vendor.startingPrice
+    ? `KES ${Number(vendor.startingPrice).toLocaleString()}`
+    : "Ask for a quote";
+  const ratingText = vendor.reviewCount
+    ? `${Number(vendor.rating).toFixed(1)} (${vendor.reviewCount})`
+    : "New on Merry Tales";
 
   return (
-    <div className="min-h-screen bg-background pb-32">
-      <div className="md:hidden fixed top-0 w-full z-40 bg-white/80 backdrop-blur border-b border-border-soft px-4 h-14 flex items-center justify-between">
-        <Link to="/vendors" className="flex items-center text-foreground font-semibold"><ChevronLeft className="h-5 w-5 mr-1" /> Back</Link>
-        <div className="flex space-x-3"><button className="text-gray-500 hover:text-primary"><Share className="h-5 w-5" /></button><button className="text-gray-500 hover:text-primary"><Heart className="h-5 w-5" /></button></div>
-      </div>
+    <main className="min-h-screen bg-[#fbfafc] pb-28 text-[#20203d] md:pb-12">
+      <header className="sticky top-0 z-40 border-b border-white/15 bg-[#191834]/95 text-white backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+          <Link
+            to="/vendors"
+            className="inline-flex items-center gap-1.5 text-sm font-bold text-white/80 transition hover:text-white"
+          >
+            <ChevronLeft className="h-4 w-4" /> All vendors
+          </Link>
+          <div className="hidden items-center gap-2 text-xs font-bold uppercase tracking-[.16em] text-white/55 sm:flex">
+            <Sparkles className="h-3.5 w-3.5 text-primary" /> Merry Tales shop
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => void shareShop()}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold text-white/85 transition hover:bg-white/10 hover:text-white"
+            >
+              <Share2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Share</span>
+            </button>
+          </div>
+        </div>
+      </header>
 
-      <div className="h-64 md:h-[400px] w-full relative pt-14 md:pt-20">
-        <img src={image} alt={vendor.businessName} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-      </div>
-
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 relative -mt-16 sm:-mt-24 z-10 mb-8">
-        <div className="bg-white rounded-3xl shadow-soft p-6 md:p-8 flex flex-col md:flex-row items-start md:items-end gap-6 border border-border-soft">
-          <img src={image} alt={`${vendor.businessName} logo`} className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl shadow-md object-cover border-4 border-white bg-white" />
-          <div className="flex-1 w-full">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-start w-full gap-4">
-              <div>
-                <p className="text-primary font-bold text-sm uppercase tracking-wider mb-1">{vendor.category}</p>
-                <div className="flex items-center gap-3 mb-2 flex-wrap">
-                  <h1 className="text-2xl md:text-3xl font-extrabold leading-tight">{vendor.businessName}</h1>
-                  <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100 border-none"><CheckCircle className="h-3 w-3 mr-1" /> Verified</Badge>
-                </div>
-                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-2">
-                  <span className="flex items-center"><Star className="h-4 w-4 text-yellow-400 fill-yellow-400 mr-1" /> <strong className="text-foreground mr-1">{Number(vendor.rating).toFixed(1)}</strong> ({vendor.reviewCount} reviews)</span>
-                  <span className="flex items-center"><MapPin className="h-4 w-4 mr-1" /> {vendor.city}</span>
-                  <span className="flex items-center"><Clock className="h-4 w-4 mr-1" /> {responseTime}</span>
-                </div>
-              </div>
-              <div className="hidden md:flex flex-col gap-2 min-w-[200px]">
-                <Button className="w-full rounded-full font-bold" onClick={() => setQuoteOpen(true)}>Request Quote</Button>
-                {whatsappUrl && <a href={whatsappUrl} target="_blank" rel="noreferrer"><Button variant="outline" className="w-full rounded-full border-green-200 text-green-700 hover:bg-green-50 font-bold"><FaWhatsapp className="mr-2 h-4 w-4" /> WhatsApp</Button></a>}
-              </div>
+      <section className="relative isolate overflow-hidden bg-[#191834]">
+        <div className="absolute inset-0 opacity-45">
+          <img src={image} alt="" className="h-full w-full object-cover" />
+        </div>
+        <div className="absolute inset-0 bg-[linear-gradient(100deg,rgba(24,23,53,.98)_10%,rgba(24,23,53,.78)_50%,rgba(24,23,53,.36)_100%)]" />
+        <div className="absolute -right-12 -top-16 h-64 w-64 rounded-full bg-primary/35 blur-3xl" />
+        <div className="relative mx-auto max-w-7xl px-4 pb-20 pt-12 sm:px-6 md:pb-28 md:pt-20">
+          <div className="max-w-3xl">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[.14em] text-white/85">
+              <BadgeCheck className="h-4 w-4 text-[#8de0b7]" /> Verified Merry
+              Tales shop
+            </div>
+            <p className="text-sm font-bold text-primary">{vendor.category}</p>
+            <h1 className="mt-2 max-w-2xl text-4xl font-black tracking-tight text-white sm:text-5xl">
+              {vendor.businessName}
+            </h1>
+            <p className="mt-5 max-w-xl text-base leading-7 text-white/75">
+              {shopSummary}
+            </p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Button
+                onClick={() => setQuoteOpen(true)}
+                className="h-12 rounded-xl px-5 text-sm font-extrabold shadow-xl shadow-black/20"
+              >
+                Plan with this shop <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              {whatsappUrl && (
+                <a href={whatsappUrl} target="_blank" rel="noreferrer">
+                  <Button
+                    variant="outline"
+                    className="h-12 rounded-xl border-white/30 bg-white/10 px-5 text-sm font-extrabold text-white hover:bg-white hover:text-[#20203d]"
+                  >
+                    <FaWhatsapp className="mr-2 h-4 w-4" /> WhatsApp
+                  </Button>
+                </a>
+              )}
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-2">
-            <Tabs defaultValue="about" className="w-full">
-              <TabsList className="w-full justify-start bg-transparent border-b border-border-soft rounded-none h-auto p-0 mb-6 flex-wrap">
-                <TabsTrigger value="about" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-3 text-base">About</TabsTrigger>
-                <TabsTrigger value="listings" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-3 text-base">Listings</TabsTrigger>
-                <TabsTrigger value="packages" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-3 text-base">Services</TabsTrigger>
-                <TabsTrigger value="reviews" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-3 text-base">Reviews ({vendor.reviewCount})</TabsTrigger>
-              </TabsList>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <section className="relative -mt-10 grid gap-4 rounded-2xl border border-white/80 bg-white p-4 shadow-[0_18px_45px_rgba(25,24,52,.12)] sm:grid-cols-[auto_1fr] sm:items-center sm:p-5">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-4 border-white bg-[linear-gradient(135deg,#f6d4e6,#fff)] text-xl font-black text-primary shadow-md sm:h-20 sm:w-20">
+            {initials}
+          </div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <p className="font-extrabold">{vendor.city}, Kenya</p>
+              <span className="hidden h-1 w-1 rounded-full bg-gray-300 sm:block" />
+              <span className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-600">
+                <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                {ratingText}
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-600">
+                <Clock3 className="h-4 w-4 text-primary" />
+                {responseTime}
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-gray-500">
+              Independent business · Secure enquiries through Merry Tales
+            </p>
+          </div>
+        </section>
 
-              <TabsContent value="about" className="space-y-6">
+        {notice && (
+          <p
+            role="status"
+            className="mt-5 rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm font-bold text-green-700"
+          >
+            {notice}
+          </p>
+        )}
+
+        <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div>
+            <nav
+              aria-label="Shop sections"
+              className="sticky top-16 z-30 -mx-4 mb-7 overflow-x-auto border-y border-[#ecebf2] bg-[#fbfafc]/95 px-4 backdrop-blur sm:mx-0 sm:rounded-xl sm:border sm:px-2"
+            >
+              <div className="flex min-w-max gap-1">
+                {tabs.map((tab) => (
+                  <button
+                    type="button"
+                    key={tab.id}
+                    onClick={() => setSection(tab.id)}
+                    className={`relative px-4 py-3.5 text-sm font-extrabold transition ${section === tab.id ? "text-primary" : "text-gray-500 hover:text-[#20203d]"}`}
+                  >
+                    {tab.label}
+                    <span className="ml-1.5 text-xs text-gray-400">
+                      {tab.count}
+                    </span>
+                    {section === tab.id && (
+                      <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-primary" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </nav>
+
+            {section === "shop" && (
+              <div className="space-y-8 animate-in fade-in duration-200">
+                <section className="rounded-2xl border border-[#e8e7ef] bg-white p-5 sm:p-7">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[.14em] text-primary">
+                        The shop story
+                      </p>
+                      <h2 className="mt-2 text-2xl font-black">
+                        Made for memorable celebrations.
+                      </h2>
+                    </div>
+                    <ShieldCheck className="h-6 w-6 shrink-0 text-green-600" />
+                  </div>
+                  <p className="mt-4 max-w-3xl text-sm leading-7 text-gray-600">
+                    {shopSummary}
+                  </p>
+                  <div className="mt-6 flex flex-wrap gap-2">
+                    <span className="rounded-full bg-[#f7f6fb] px-3 py-1.5 text-xs font-bold text-[#4a4965]">
+                      {vendor.category}
+                    </span>
+                    <span className="rounded-full bg-[#f7f6fb] px-3 py-1.5 text-xs font-bold text-[#4a4965]">
+                      Based in {vendor.city}
+                    </span>
+                    <span className="rounded-full bg-[#f7f6fb] px-3 py-1.5 text-xs font-bold text-[#4a4965]">
+                      Secure enquiry
+                    </span>
+                  </div>
+                </section>
+                <section>
+                  <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[.14em] text-primary">
+                        Featured catalogue
+                      </p>
+                      <h2 className="mt-1 text-2xl font-black">
+                        Shop their offers
+                      </h2>
+                    </div>
+                    {products.length > 4 && (
+                      <button
+                        type="button"
+                        onClick={() => setSection("shop")}
+                        className="text-sm font-extrabold text-primary"
+                      >
+                        View all {products.length} offers
+                      </button>
+                    )}
+                  </div>
+                  {products.length ? (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {products.map((item) => (
+                        <ProductCard key={item.id} {...toProductCard(item)} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-[#d9d7e4] bg-white p-8 text-center">
+                      <PackageOpen className="mx-auto h-8 w-8 text-primary" />
+                      <h3 className="mt-3 font-extrabold">
+                        A tailored catalogue is coming
+                      </h3>
+                      <p className="mx-auto mt-1 max-w-md text-sm text-gray-500">
+                        Contact this shop with your event brief to receive
+                        options and a custom proposal.
+                      </p>
+                      <Button
+                        onClick={() => setQuoteOpen(true)}
+                        variant="outline"
+                        className="mt-5 rounded-xl"
+                      >
+                        Request a proposal
+                      </Button>
+                    </div>
+                  )}
+                </section>
+              </div>
+            )}
+
+            {section === "services" && (
+              <section className="space-y-4 animate-in fade-in duration-200">
                 <div>
-                  <h3 className="text-xl font-bold mb-3">About {vendor.businessName}</h3>
-                  <p className="text-gray-600 leading-relaxed">{vendor.description ?? `${vendor.businessName} is a verified Merry Tales provider for ${vendor.category.toLowerCase()} in ${vendor.city}.`}</p>
+                  <p className="text-xs font-bold uppercase tracking-[.14em] text-primary">
+                    Plan with confidence
+                  </p>
+                  <h2 className="mt-1 text-2xl font-black">
+                    Services & packages
+                  </h2>
+                  <p className="mt-2 text-sm text-gray-500">
+                    Choose a starting point, then personalise it with the shop.
+                  </p>
                 </div>
-              </TabsContent>
-
-              <TabsContent value="listings" className="space-y-4">
-                {vendor.products?.length ? <div className="grid sm:grid-cols-2 gap-4">{vendor.products.map((item) => <ProductCard key={item.id} {...toProductCard(item)} />)}</div> : <p className="text-gray-500">No approved listings yet.</p>}
-              </TabsContent>
-
-              <TabsContent value="packages" className="space-y-6">
-                {vendor.services?.length ? vendor.services.map((service) => (
-                  <div key={service.id} className="border border-border-soft rounded-2xl p-6 bg-white shadow-sm">
-                    <div className="flex justify-between items-start mb-4 gap-4">
-                      <div><h3 className="text-lg font-bold">{service.name}</h3>{service.description && <p className="text-sm text-gray-500 mt-1">{service.description}</p>}</div>
-                      {service.price != null && <div className="text-xl font-bold text-primary whitespace-nowrap">KES {Number(service.price).toLocaleString()}</div>}
-                    </div>
-                    <Button className="w-full rounded-full" variant="outline" onClick={() => { setQuoteForm((current) => ({ ...current, message: `I'm interested in ${service.name}.` })); setQuoteOpen(true); }}>Request this service</Button>
+                {services.length ? (
+                  services.map((service) => (
+                    <article
+                      key={service.id}
+                      className="rounded-2xl border border-[#e8e7ef] bg-white p-5 shadow-sm sm:p-6"
+                    >
+                      <div className="flex flex-col justify-between gap-4 sm:flex-row">
+                        <div>
+                          <h3 className="text-lg font-extrabold">
+                            {service.name}
+                          </h3>
+                          {service.description && (
+                            <p className="mt-2 max-w-xl text-sm leading-6 text-gray-600">
+                              {service.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className="shrink-0 text-left sm:text-right">
+                          <p className="text-xs font-bold uppercase tracking-[.12em] text-gray-400">
+                            From
+                          </p>
+                          <p className="mt-1 text-xl font-black text-primary">
+                            {service.price != null
+                              ? `KES ${Number(service.price).toLocaleString()}`
+                              : "On request"}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setQuoteForm((current) => ({
+                            ...current,
+                            message: `I'm interested in ${service.name}.`,
+                          }));
+                          setQuoteOpen(true);
+                        }}
+                        className="mt-5 rounded-xl"
+                      >
+                        Ask about this service{" "}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </article>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-dashed bg-white p-8 text-center text-sm text-gray-500">
+                    This shop will tailor a package to your event. Send a brief
+                    to get started.
                   </div>
-                )) : <p className="text-gray-500">Services will appear here once added.</p>}
-              </TabsContent>
+                )}
+              </section>
+            )}
 
-              <TabsContent value="reviews">
-                <div className="space-y-6">
-                  <div className="flex items-center mb-6">
-                    <div className="text-4xl font-bold mr-4">{Number(vendor.rating).toFixed(1)}</div>
-                    <div><div className="flex text-yellow-400 mb-1">{[1, 2, 3, 4, 5].map((value) => <Star key={value} className="h-4 w-4 fill-yellow-400" />)}</div><p className="text-sm text-gray-500">Based on {vendor.reviewCount} reviews</p></div>
-                  </div>
-                  {vendor.reviews?.length ? vendor.reviews.map((review) => (
-                    <div key={review.id} className="border-b border-border-soft pb-6">
-                      <div className="flex justify-between mb-2"><h4 className="font-bold">{review.authorName}</h4><span className="text-sm text-gray-500">{new Date(review.createdAt).toLocaleDateString('en-KE')}</span></div>
-                      <div className="flex text-yellow-400 mb-3">{Array.from({ length: review.rating }, (_, index) => <Star key={index} className="h-3 w-3 fill-yellow-400" />)}</div>
-                      {review.body && <p className="text-gray-600 text-sm leading-relaxed">{review.body}</p>}
+            {section === "reviews" && (
+              <section className="animate-in fade-in duration-200">
+                <div className="rounded-2xl bg-[#20203d] p-6 text-white sm:p-8">
+                  <p className="text-xs font-bold uppercase tracking-[.14em] text-primary">
+                    Customer love
+                  </p>
+                  <div className="mt-3 flex items-end gap-4">
+                    <p className="text-5xl font-black">
+                      {Number(vendor.rating).toFixed(1)}
+                    </p>
+                    <div className="pb-1">
+                      <div className="flex text-amber-400">
+                        {[1, 2, 3, 4, 5].map((value) => (
+                          <Star key={value} className="h-4 w-4 fill-current" />
+                        ))}
+                      </div>
+                      <p className="mt-1 text-sm text-white/65">
+                        From {vendor.reviewCount} Merry Tales reviews
+                      </p>
                     </div>
-                  )) : <p className="text-gray-500">No reviews yet.</p>}
+                  </div>
                 </div>
-              </TabsContent>
-            </Tabs>
+                <div className="mt-6 space-y-4">
+                  {vendor.reviews?.length ? (
+                    vendor.reviews.map((review) => (
+                      <article
+                        key={review.id}
+                        className="rounded-2xl border border-[#e8e7ef] bg-white p-5"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="font-extrabold">
+                              {review.authorName}
+                            </p>
+                            <div className="mt-1 flex text-amber-400">
+                              {Array.from(
+                                { length: review.rating },
+                                (_, index) => (
+                                  <Star
+                                    key={index}
+                                    className="h-3.5 w-3.5 fill-current"
+                                  />
+                                ),
+                              )}
+                            </div>
+                          </div>
+                          <span className="text-xs text-gray-400">
+                            {new Date(review.createdAt).toLocaleDateString(
+                              "en-KE",
+                              { month: "short", year: "numeric" },
+                            )}
+                          </span>
+                        </div>
+                        {review.body && (
+                          <p className="mt-4 text-sm leading-6 text-gray-600">
+                            “{review.body}”
+                          </p>
+                        )}
+                      </article>
+                    ))
+                  ) : (
+                    <div className="rounded-2xl border border-dashed bg-white p-8 text-center text-sm text-gray-500">
+                      Customer reviews will appear here as this shop completes
+                      events through Merry Tales.
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
           </div>
 
-          <div className="hidden md:block">
-            <div className="sticky top-28 bg-white border border-border-soft rounded-3xl p-6 shadow-sm">
-              <h3 className="font-bold text-lg mb-4">Pricing</h3>
-              <div className="flex justify-between items-end mb-6 pb-6 border-b border-border-soft">
-                <span className="text-gray-500">Starting from</span>
-                <span className="text-2xl font-bold">KES {Number(vendor.startingPrice ?? 0).toLocaleString()}</span>
+          <aside className="hidden lg:block">
+            <div className="sticky top-28 overflow-hidden rounded-2xl border border-[#e8e7ef] bg-white shadow-[0_16px_42px_rgba(25,24,52,.08)]">
+              <div className="bg-[linear-gradient(135deg,#fff3f8,#f6f1ff)] p-6">
+                <p className="text-xs font-bold uppercase tracking-[.14em] text-primary">
+                  Start planning
+                </p>
+                <h2 className="mt-2 text-xl font-black">
+                  Bring your event idea to life.
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-gray-600">
+                  Tell {vendor.businessName} what you have in mind and receive a
+                  tailored response.
+                </p>
               </div>
-              <div className="space-y-4 mb-6">
-                <div className="flex justify-between text-sm"><span className="text-gray-500 flex items-center"><Clock className="h-4 w-4 mr-2" /> Response</span><span className="font-medium">{responseTime}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-gray-500 flex items-center"><MapPin className="h-4 w-4 mr-2" /> Base</span><span className="font-medium">{vendor.city}</span></div>
+              <div className="space-y-5 p-6">
+                <div className="flex items-end justify-between border-b border-[#eeeef3] pb-5">
+                  <span className="text-sm text-gray-500">Starting from</span>
+                  <strong className="text-xl font-black">
+                    {startingPrice}
+                  </strong>
+                </div>
+                <div className="space-y-3 text-sm">
+                  <p className="flex items-center gap-2 text-gray-600">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" /> Verified
+                    shop
+                  </p>
+                  <p className="flex items-center gap-2 text-gray-600">
+                    <Clock3 className="h-4 w-4 text-primary" /> {responseTime}
+                  </p>
+                  <p className="flex items-center gap-2 text-gray-600">
+                    <MapPin className="h-4 w-4 text-primary" /> {vendor.city}
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setQuoteOpen(true)}
+                  className="h-12 w-full rounded-xl font-extrabold"
+                >
+                  Request a proposal
+                </Button>
+                {whatsappUrl && (
+                  <a href={whatsappUrl} target="_blank" rel="noreferrer">
+                    <Button
+                      variant="outline"
+                      className="mt-3 h-11 w-full rounded-xl border-green-200 font-extrabold text-green-700 hover:bg-green-50"
+                    >
+                      <FaWhatsapp className="mr-2 h-4 w-4" /> Chat on WhatsApp
+                    </Button>
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void shareShop()}
+                  className="mt-1 flex w-full items-center justify-center gap-2 text-xs font-bold text-gray-500 hover:text-primary"
+                >
+                  <Copy className="h-3.5 w-3.5" /> Copy or share shop link
+                </button>
               </div>
-              <Button className="w-full rounded-full font-bold py-6 mb-3" onClick={() => setQuoteOpen(true)}>Request Quote</Button>
-              {whatsappUrl && <a href={whatsappUrl} target="_blank" rel="noreferrer"><Button variant="outline" className="w-full rounded-full border-green-200 text-green-700 hover:bg-green-50 font-bold py-6"><FaWhatsapp className="mr-2 h-5 w-5" /> Chat on WhatsApp</Button></a>}
             </div>
-          </div>
+          </aside>
         </div>
       </div>
 
-      <div className="md:hidden fixed bottom-16 left-0 right-0 bg-white border-t border-border-soft p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] z-40 flex gap-3">
-        <Button className="flex-1 rounded-full font-bold shadow-soft" onClick={() => setQuoteOpen(true)}>Request Quote</Button>
-        {whatsappUrl && <a href={whatsappUrl} target="_blank" rel="noreferrer"><Button variant="outline" size="icon" className="rounded-full w-12 h-12 shrink-0 border-green-200 text-green-600 bg-green-50"><FaWhatsapp className="h-6 w-6" /></Button></a>}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e8e7ef] bg-white/95 p-3 backdrop-blur lg:hidden">
+        <div className="mx-auto flex max-w-lg gap-2">
+          <Button
+            onClick={() => setQuoteOpen(true)}
+            className="h-12 flex-1 rounded-xl font-extrabold"
+          >
+            Request proposal
+          </Button>
+          {whatsappUrl && (
+            <a href={whatsappUrl} target="_blank" rel="noreferrer">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-12 w-12 rounded-xl border-green-200 bg-green-50 text-green-700"
+              >
+                <FaWhatsapp className="h-5 w-5" />
+              </Button>
+            </a>
+          )}
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => void shareShop()}
+            className="h-12 w-12 rounded-xl"
+          >
+            <Share2 className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
       {quoteOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
-            <h2 className="text-xl font-black">Request a quote from {vendor.businessName}</h2>
-            <p className="mt-2 text-sm text-gray-500">Share your event details. The vendor receives this as a lead in their Merry Tales workspace.</p>
-            <div className="mt-5 space-y-3">
-              <Input placeholder="Your name" value={quoteForm.name} onChange={(e) => setQuoteForm({ ...quoteForm, name: e.target.value })} />
-              <Input placeholder="Phone / WhatsApp" value={quoteForm.phone} onChange={(e) => setQuoteForm({ ...quoteForm, phone: e.target.value })} />
-              <Input placeholder="Email (optional)" value={quoteForm.email} onChange={(e) => setQuoteForm({ ...quoteForm, email: e.target.value })} />
-              <Input type="date" value={quoteForm.eventDate} onChange={(e) => setQuoteForm({ ...quoteForm, eventDate: e.target.value })} />
-              <textarea value={quoteForm.message} onChange={(e) => setQuoteForm({ ...quoteForm, message: e.target.value })} placeholder="Tell the vendor what you need…" className="min-h-24 w-full rounded-xl border p-3 text-sm" />
+        <div className="fixed inset-0 z-50 grid place-items-end bg-[#17162d]/55 p-0 backdrop-blur-sm sm:place-items-center sm:p-5">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="quote-title"
+            className="w-full max-w-xl rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[.14em] text-primary">
+                  A better brief, a better quote
+                </p>
+                <h2 id="quote-title" className="mt-1 text-2xl font-black">
+                  Plan with {vendor.businessName}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-gray-500">
+                  Share the essentials. The shop receives this in their Merry
+                  Tales workspace.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setQuoteOpen(false)}
+                className="grid h-9 w-9 place-items-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            {quoteNotice && <p className="mt-3 text-sm text-primary">{quoteNotice}</p>}
-            <div className="mt-5 flex gap-3"><Button variant="outline" className="rounded-full" onClick={() => setQuoteOpen(false)}>Cancel</Button><Button disabled={quoteBusy || !quoteForm.name || !quoteForm.phone} onClick={() => void sendQuote()} className="flex-1 rounded-full">{quoteBusy ? 'Sending…' : 'Send request'}</Button></div>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <Input
+                placeholder="Your name"
+                value={quoteForm.name}
+                onChange={(event) =>
+                  setQuoteForm({ ...quoteForm, name: event.target.value })
+                }
+                className="h-11 rounded-xl"
+              />
+              <Input
+                placeholder="Phone / WhatsApp"
+                value={quoteForm.phone}
+                onChange={(event) =>
+                  setQuoteForm({ ...quoteForm, phone: event.target.value })
+                }
+                className="h-11 rounded-xl"
+              />
+              <Input
+                placeholder="Email (optional)"
+                value={quoteForm.email}
+                onChange={(event) =>
+                  setQuoteForm({ ...quoteForm, email: event.target.value })
+                }
+                className="h-11 rounded-xl"
+              />
+              <Input
+                type="date"
+                aria-label="Event date"
+                value={quoteForm.eventDate}
+                onChange={(event) =>
+                  setQuoteForm({ ...quoteForm, eventDate: event.target.value })
+                }
+                className="h-11 rounded-xl"
+              />
+            </div>
+            <textarea
+              value={quoteForm.message}
+              onChange={(event) =>
+                setQuoteForm({ ...quoteForm, message: event.target.value })
+              }
+              placeholder="What are you planning? Include your celebration type, guests, style and budget if you know them."
+              className="mt-3 min-h-28 w-full rounded-xl border border-input p-3 text-sm leading-6 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
+            />
+            <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button
+                variant="ghost"
+                onClick={() => setQuoteOpen(false)}
+                className="rounded-xl"
+              >
+                Not now
+              </Button>
+              <Button
+                disabled={quoteBusy || !quoteForm.name || !quoteForm.phone}
+                onClick={() => void sendQuote()}
+                className="h-11 rounded-xl px-5 font-extrabold"
+              >
+                {quoteBusy ? "Sending request…" : "Send my request"}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 }
