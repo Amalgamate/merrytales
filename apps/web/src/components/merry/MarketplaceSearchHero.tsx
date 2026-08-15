@@ -36,7 +36,7 @@ const heroSlides = [
     title: 'Be there, even from afar.',
     accent: 'Every coin accounted for.',
     copy: 'Plan Cucu’s celebration, fund a loved one’s event and follow the budget from your own currency to the final moment.',
-    image: '/campaign/diaspora-family.png',
+    image: '/hero/Be There.png',
     alt: 'A Kenyan grandmother celebrating with family while relatives join from abroad',
     label: 'DIASPORA',
     cta: 'Plan for family',
