@@ -169,11 +169,11 @@ export function MarketplaceSearchHero() {
       </div>
       <div
         className="pointer-events-none absolute inset-0 z-[1]"
-        style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,.22) 0%, rgba(255,255,255,.30) 34%, rgba(255,255,255,.48) 58%, rgba(255,255,255,.82) 78%, #ffffff 100%)' }}
+        style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,.06) 0%, rgba(255,255,255,.12) 34%, rgba(255,255,255,.30) 58%, rgba(255,255,255,.72) 80%, #ffffff 100%)' }}
       />
       <div
         className="pointer-events-none absolute inset-0 z-[1]"
-        style={{ background: 'linear-gradient(90deg, rgba(255,255,255,.28) 0%, rgba(255,255,255,.08) 30%, rgba(255,255,255,.12) 70%, rgba(255,255,255,.28) 100%)' }}
+        style={{ background: 'linear-gradient(90deg, rgba(255,255,255,.12) 0%, rgba(255,255,255,.03) 30%, rgba(255,255,255,.06) 70%, rgba(255,255,255,.12) 100%)' }}
       />
       <div className="relative z-[2] mx-auto flex min-h-[620px] max-w-7xl flex-col justify-center px-4 pb-10 pt-8 sm:min-h-[680px] sm:px-6 lg:min-h-[calc(100svh-80px)] lg:px-8">
         <div className="hero-content mx-auto w-full max-w-5xl text-center">
