@@ -41,12 +41,24 @@ jobs:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
           test -n "$DEPLOY_PATH" || { echo "Missing DEPLOY_PATH secret"; exit 1; }
-          ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes -o StrictHostKeyChecking=yes -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" "
-            set -eu
-            cd '$DEPLOY_PATH'
-            git pull --ff-only origin main
-            sudo -n docker compose up -d --build
-            sudo -n docker compose ps
-            sudo -n docker compose exec -T api wget --quiet --tries=1 --spider http://127.0.0.1:3001/api/health
-            sudo -n docker compose exec -T web wget --quiet --tries=1 --spider http://127.0.0.1/healthz
-          "
+          for attempt in 1 2 3; do
+            if ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes -o ConnectTimeout=20 -o StrictHostKeyChecking=yes -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" "
+              set -eu
+              cd '$DEPLOY_PATH'
+              git pull --ff-only origin main
+              sudo -n docker compose up -d --build
+              sudo -n docker compose ps
+              sudo -n docker compose exec -T api wget --quiet --tries=1 --spider http://127.0.0.1:3001/api/health
+              sudo -n docker compose exec -T web wget --quiet --tries=1 --spider http://127.0.0.1/healthz
+            "; then
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 3 ]; then
+              echo "SSH deployment attempt $attempt failed; retrying in 15 seconds."
+              sleep 15
+            fi
+          done
+
+          echo "Deployment could not connect to the production server after 3 attempts."
+          exit 1
