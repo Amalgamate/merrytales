@@ -40,7 +40,7 @@ const heroSlides = [
     title: "Give more than a gift.",
     accent: "Give them a story.",
     copy: "Send Gift Pesa, contribute as a group, or choose flights, adventures and thoughtful experiences for someone you love.",
-    image: "/campaign/gift-experiences.png",
+    image: "/Hero/give-more.png",
     alt: "A joyful Kenyan family sharing a premium celebration gift",
     label: "GIFT",
     cta: "Explore gifting",
