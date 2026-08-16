@@ -302,12 +302,12 @@ export function MarketplaceSearchHero() {
           <div
             ref={floralOverlayRef}
             aria-hidden="true"
-            className="hero-floral-overlay pointer-events-none absolute inset-x-0 bottom-0 z-20 h-28 sm:h-36 lg:h-44"
+            className="hero-floral-overlay pointer-events-none absolute inset-0 z-20"
           >
             <img
               src="/Hero/hero-bottom-flowers.png"
               alt=""
-              className="h-full w-full object-cover object-bottom opacity-55"
+              className="h-full w-full object-contain object-bottom opacity-55"
             />
           </div>
         </div>
