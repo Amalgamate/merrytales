@@ -128,6 +128,8 @@ function HeroCopy({ slide }: { slide: (typeof heroSlides)[number] }) {
 
 export function MarketplaceSearchHero() {
   const navigate = useNavigate();
+  const heroRef = useRef<HTMLElement>(null);
+  const floralOverlayRef = useRef<HTMLDivElement>(null);
   const wheelLockRef = useRef(false);
   const [query, setQuery] = useState("");
   const [city, setCity] = useState("");
@@ -159,6 +161,38 @@ export function MarketplaceSearchHero() {
       window.removeEventListener("scroll", detectScroll);
     };
   }, [activeSlide]);
+
+  useEffect(() => {
+    let frame: number | undefined;
+
+    const moveFloralOverlay = () => {
+      frame = undefined;
+      const hero = heroRef.current;
+      const flowers = floralOverlayRef.current;
+      if (!hero || !flowers) return;
+
+      const viewportHeight = window.innerHeight || 1;
+      const progress = Math.max(
+        -1,
+        Math.min(1, hero.getBoundingClientRect().top / viewportHeight),
+      );
+      flowers.style.setProperty("--hero-floral-scroll", `${progress * -22}px`);
+    };
+
+    const requestMotionUpdate = () => {
+      if (frame === undefined) frame = window.requestAnimationFrame(moveFloralOverlay);
+    };
+
+    moveFloralOverlay();
+    window.addEventListener("scroll", requestMotionUpdate, { passive: true });
+    window.addEventListener("resize", requestMotionUpdate);
+
+    return () => {
+      if (frame !== undefined) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", requestMotionUpdate);
+      window.removeEventListener("resize", requestMotionUpdate);
+    };
+  }, []);
 
   const filtered = query.trim()
     ? suggestions
@@ -198,11 +232,12 @@ export function MarketplaceSearchHero() {
 
   return (
     <section
+      ref={heroRef}
       onWheel={shuffleOnWheel}
       className="relative isolate z-20 overflow-hidden bg-[#fff9f4] pb-10 text-[#101936] sm:pb-12"
     >
       <div className="relative w-full">
-        <div className="grid overflow-hidden lg:min-h-[min(700px,calc(100svh-120px))] lg:grid-cols-[.82fr_1.18fr] lg:items-stretch">
+        <div className="relative grid overflow-hidden lg:min-h-[min(700px,calc(100svh-120px))] lg:grid-cols-[.82fr_1.18fr] lg:items-stretch">
           <div className="relative z-10 flex min-h-[490px] items-center px-4 py-14 sm:min-h-[530px] sm:px-6 sm:py-[4.5rem] lg:min-h-0 lg:px-12 lg:py-20 xl:pl-[10vw]">
             <div className="w-full max-w-[600px] text-left">
               <div
@@ -263,6 +298,17 @@ export function MarketplaceSearchHero() {
               />
             ))}
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,249,244,.94)_0%,rgba(255,249,244,.48)_16%,rgba(255,249,244,0)_42%)] lg:block" />
+          </div>
+          <div
+            ref={floralOverlayRef}
+            aria-hidden="true"
+            className="hero-floral-overlay pointer-events-none absolute inset-x-0 bottom-0 z-20 h-28 sm:h-36 lg:h-44"
+          >
+            <img
+              src="/Hero/hero-bottom-flowers.png"
+              alt=""
+              className="h-full w-full object-cover object-bottom opacity-55"
+            />
           </div>
         </div>
 
