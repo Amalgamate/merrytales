@@ -216,7 +216,7 @@ export function MarketplaceSearchHero() {
     >
       <div className="relative w-full">
         <div className="relative grid overflow-hidden lg:h-[min(700px,calc(100svh-120px))] lg:grid-cols-[.82fr_1.18fr] lg:items-stretch">
-          <div className="relative z-10 flex min-h-[490px] items-center px-4 py-14 sm:min-h-[530px] sm:px-6 sm:py-[4.5rem] lg:min-h-0 lg:px-12 lg:py-20 xl:pl-[10vw]">
+          <div className="relative z-10 flex min-h-[490px] items-center px-4 py-14 sm:min-h-[530px] sm:px-6 sm:py-[4.5rem] lg:min-h-0 lg:px-12 lg:py-20 xl:pl-[20vw]">
             <div className="w-full max-w-[600px] text-left">
               <div
                 key={slide.title}
