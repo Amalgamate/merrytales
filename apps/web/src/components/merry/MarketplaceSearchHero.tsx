@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { FormEvent, WheelEvent } from "react";
+import type { FormEvent } from "react";
 import { CalendarDays, MapPin, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -80,13 +80,13 @@ const heroSlides = [
 
 function HeroHeading({ slide }: { slide: (typeof heroSlides)[number] }) {
   const headingClass =
-    "max-w-[600px] font-display font-medium leading-[.94] tracking-[-.035em] text-[#101936]";
+    "max-w-[680px] text-balance font-display font-medium leading-[.92] tracking-[-.035em] text-[#101936]";
 
   if (slide.label === "DIASPORA") {
     return (
       <h1
         className={headingClass}
-        style={{ fontSize: "clamp(3.1rem, 6vw, 5.5rem)" }}
+        style={{ fontSize: "clamp(2.9rem, 5vw, 5.25rem)" }}
       >
         <span className="block">Be there,</span>
         <span className="block">
@@ -99,7 +99,7 @@ function HeroHeading({ slide }: { slide: (typeof heroSlides)[number] }) {
   return (
     <h1
       className={headingClass}
-      style={{ fontSize: "clamp(3rem, 5.5vw, 5.15rem)" }}
+      style={{ fontSize: "clamp(2.8rem, 4.5vw, 5rem)" }}
     >
       <span className="block">{slide.title}</span>
       <span className="mt-1 block text-[#ec3d83]">{slide.accent}</span>
@@ -110,7 +110,7 @@ function HeroHeading({ slide }: { slide: (typeof heroSlides)[number] }) {
 function HeroCopy({ slide }: { slide: (typeof heroSlides)[number] }) {
   if (slide.label === "DIASPORA") {
     return (
-      <p className="mt-5 max-w-[500px] font-sans text-[16px] font-normal leading-[1.6] text-[#526078] sm:text-[18px]">
+      <p className="mt-5 max-w-[540px] font-sans text-[16px] font-normal leading-[1.6] text-[#151827] sm:text-[18px]">
         Plan Cucu’s celebration,{" "}
         <span className="font-medium text-[#ec3d83]">fund</span> a loved one’s
         event, and <span className="font-medium text-[#ec3d83]">follow</span>{" "}
@@ -120,7 +120,7 @@ function HeroCopy({ slide }: { slide: (typeof heroSlides)[number] }) {
   }
 
   return (
-    <p className="mt-5 max-w-[500px] font-sans text-[16px] font-normal leading-[1.6] text-[#526078] sm:text-[18px]">
+    <p className="mt-5 max-w-[540px] font-sans text-[16px] font-normal leading-[1.6] text-[#151827] sm:text-[18px]">
       {slide.copy}
     </p>
   );
@@ -130,7 +130,6 @@ export function MarketplaceSearchHero() {
   const navigate = useNavigate();
   const heroRef = useRef<HTMLElement>(null);
   const floralOverlayRef = useRef<HTMLDivElement>(null);
-  const wheelLockRef = useRef(false);
   const [query, setQuery] = useState("");
   const [city, setCity] = useState("");
   const [date, setDate] = useState("");
@@ -210,35 +209,14 @@ export function MarketplaceSearchHero() {
     navigate(`/shop${params.size ? `?${params.toString()}` : ""}`);
   };
 
-  const shuffleOnWheel = (event: WheelEvent<HTMLElement>) => {
-    if (Math.abs(event.deltaY) < 4) return;
-    const movingForward = event.deltaY > 0;
-    const canChangeSlide = movingForward
-      ? activeSlide < heroSlides.length - 1
-      : activeSlide > 0;
-
-    // Keep the page anchored while there is another story in the scroll direction.
-    // At the final/first boundary, allow the browser to continue normal page scrolling.
-    if (!canChangeSlide) return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (wheelLockRef.current) return;
-    wheelLockRef.current = true;
-    setActiveSlide((current) => current + (movingForward ? 1 : -1));
-    window.setTimeout(() => {
-      wheelLockRef.current = false;
-    }, 480);
-  };
-
   return (
     <section
       ref={heroRef}
-      onWheel={shuffleOnWheel}
       className="relative isolate z-20 overflow-hidden bg-[#fff9f4] pb-10 text-[#101936] sm:pb-12"
     >
       <div className="relative w-full">
-        <div className="relative grid overflow-hidden lg:min-h-[min(700px,calc(100svh-120px))] lg:grid-cols-[.82fr_1.18fr] lg:items-stretch">
-          <div className="relative z-10 flex min-h-[490px] items-center px-4 py-14 sm:min-h-[530px] sm:px-6 sm:py-[4.5rem] lg:min-h-0 lg:px-12 lg:py-20 xl:pl-[10vw]">
+        <div className="relative grid overflow-hidden lg:h-[min(700px,calc(100svh-120px))] lg:grid-cols-[.82fr_1.18fr] lg:items-stretch">
+          <div className="relative z-10 flex min-h-[490px] items-center px-4 py-14 sm:min-h-[530px] sm:px-6 sm:py-[4.5rem] lg:min-h-0 lg:px-12 lg:py-20 xl:pl-[7vw]">
             <div className="w-full max-w-[600px] text-left">
               <div
                 key={slide.title}
@@ -294,7 +272,7 @@ export function MarketplaceSearchHero() {
                 src={item.image}
                 alt={activeSlide === index ? item.alt : ""}
                 aria-hidden={activeSlide !== index}
-                className={`hero-fade-image absolute inset-0 h-full w-full object-cover object-[68%_center] ${activeSlide === index ? "opacity-100" : "opacity-0"}`}
+                className={`hero-fade-image absolute inset-0 h-full w-full object-cover object-[68%_center] ${activeSlide === index ? "is-active" : ""}`}
               />
             ))}
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,249,244,.94)_0%,rgba(255,249,244,.48)_16%,rgba(255,249,244,0)_42%)] lg:block" />

@@ -219,7 +219,8 @@ body {
 .hero-sparkle { animation: hero-twinkle 3.8s ease-in-out infinite; }
 .hero-type-cursor { display: inline-block; width: .055em; height: .82em; margin-left: .07em; border-radius: 999px; background: currentColor; animation: hero-cursor-blink .72s ease-in-out infinite; vertical-align: -.02em; }
 @keyframes hero-cursor-blink { 0%, 44% { opacity: 1; } 56%, 100% { opacity: .14; } }
-.hero-fade-image { transform: scale(1.035); transition: opacity 1400ms ease-out; animation: hero-pan 26s ease-in-out infinite alternate; will-change: opacity, transform; }
+.hero-fade-image { z-index: 0; opacity: 0; clip-path: circle(0% at 50% 50%); transform: scale(1.025); transition: opacity 550ms ease 350ms, clip-path 1100ms cubic-bezier(.22,1,.36,1), transform 1100ms ease; will-change: clip-path, opacity, transform; }
+.hero-fade-image.is-active { z-index: 1; opacity: 1; clip-path: circle(150% at 50% 50%); transition: opacity 550ms ease, clip-path 1100ms cubic-bezier(.22,1,.36,1), transform 1100ms ease; animation: hero-pan 24s ease-in-out infinite alternate; }
 .hero-floral-overlay { transform: translate3d(0, var(--hero-floral-scroll, 0px), 0); transition: transform 160ms linear; will-change: transform; }
 .hero-background-scene { animation: hero-background-reveal .9s cubic-bezier(.22,1,.36,1) both, hero-pan 24s 1s ease-in-out infinite; }
 .hero-book { perspective: 1600px; }
