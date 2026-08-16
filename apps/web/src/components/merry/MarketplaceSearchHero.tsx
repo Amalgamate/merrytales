@@ -307,7 +307,7 @@ export function MarketplaceSearchHero() {
             <img
               src="/Hero/hero-bottom-flowers.png"
               alt=""
-              className="h-full w-full object-contain object-bottom opacity-55"
+              className="h-full w-full object-cover object-bottom opacity-55"
             />
           </div>
         </div>
