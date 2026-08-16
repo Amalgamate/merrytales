@@ -1,7 +1,9 @@
 import { Router } from 'express';
+import { randomBytes } from 'crypto';
 import { ComplianceStatus, DocumentReviewStatus, ListingModerationStatus, ProductionStatus, SubscriptionStatus, UserRole, VendorStatus } from '@prisma/client';
 import { z } from 'zod';
 import { db } from '../db';
+import { hashPassword } from '../lib/auth';
 import { requireAuth, requireRole } from '../middleware/auth';
 
 const router = Router();
@@ -32,7 +34,40 @@ router.get('/admin/chat/threads', requireRole(UserRole.STAFF,UserRole.ADMIN,User
 router.post('/admin/chat/threads',requireRole(UserRole.ADMIN,UserRole.SUPERADMIN),async(req,res,next)=>{try{const input=z.object({title:z.string().trim().min(3).max(120),type:z.enum(['GENERAL','INCIDENT','SUPPORT','VENDOR','ORDER']).default('SUPPORT'),participantIds:z.array(z.string()).default([])}).parse(req.body);const ids=[...new Set([req.user!.id,...input.participantIds])];res.status(201).json({data:await db.opsThread.create({data:{title:input.title,type:input.type,participants:{create:ids.map(userId=>({userId}))}},include:{participants:true,messages:true}})});}catch(error){next(error);}});
 router.post('/admin/chat/threads/:id/messages',requireRole(UserRole.STAFF,UserRole.ADMIN,UserRole.SUPERADMIN),async(req,res,next)=>{try{const{body}=z.object({body:z.string().trim().min(1).max(4000)}).parse(req.body);const thread=await db.opsThread.findFirst({where:{id:req.params.id,OR:[{participants:{some:{userId:req.user!.id}}},{type:'GENERAL'}]}});if(!thread)return res.status(404).json({error:{code:'THREAD_NOT_FOUND',message:'Conversation not found.'}});const message=await db.$transaction(async tx=>{await tx.opsThread.update({where:{id:thread.id},data:{updatedAt:new Date()}});return tx.opsMessage.create({data:{threadId:thread.id,senderId:req.user!.id,body},include:{sender:{select:{id:true,firstName:true,lastName:true,role:true}}}})});res.status(201).json({data:message});}catch(error){next(error);}});
 router.post('/admin/notifications/broadcast',requireRole(UserRole.SUPERADMIN),async(req,res,next)=>{try{const input=z.object({title:z.string().trim().min(3).max(120),body:z.string().trim().min(3).max(1000),severity:z.enum(['INFO','SUCCESS','WARNING','CRITICAL']).default('INFO'),roles:z.array(z.enum(UserRole)).min(1),actionUrl:z.string().trim().max(300).optional()}).parse(req.body);const recipients=await db.user.findMany({where:{role:{in:input.roles}},select:{id:true}});await db.notification.createMany({data:recipients.map(item=>({userId:item.id,title:input.title,body:input.body,severity:input.severity,category:'OPERATIONS',actionUrl:input.actionUrl}))});res.status(201).json({data:{recipients:recipients.length}});}catch(error){next(error);}});
-router.get('/admin/users', requireRole(UserRole.SUPERADMIN), async (_req, res, next) => { try { res.json({ data: await db.user.findMany({ select: { id: true, email: true, firstName: true, lastName: true, role: true, status: true, createdAt: true }, orderBy: { createdAt: 'desc' }, take: 100 }) }); } catch (error) { next(error); } });
+const managedUser = { id: true, email: true, firstName: true, lastName: true, role: true, status: true, mustChangePassword: true, createdAt: true } as const;
+router.get('/admin/users', requireRole(UserRole.SUPERADMIN), async (_req, res, next) => { try { res.json({ data: await db.user.findMany({ select: managedUser, orderBy: { createdAt: 'desc' }, take: 100 }) }); } catch (error) { next(error); } });
+router.patch('/admin/users/:id', requireRole(UserRole.SUPERADMIN), async (req, res, next) => {
+  try {
+    if (req.params.id === req.user!.id) return res.status(400).json({ error: { code: 'SELF_CHANGE_BLOCKED', message: 'Use a separate superadmin account to change your own access.' } });
+    const input = z.object({ role: z.enum(UserRole).optional(), status: z.enum(['ACTIVE', 'SUSPENDED', 'PENDING_VERIFICATION']).optional() }).refine(value => value.role || value.status, 'Choose a role or status change.').parse(req.body);
+    const target = await db.user.findUnique({ where: { id: req.params.id }, select: { id: true, role: true, status: true } });
+    if (!target) return res.status(404).json({ error: { code: 'USER_NOT_FOUND', message: 'User not found.' } });
+    const removesLastSuperadmin = target.role === UserRole.SUPERADMIN && (input.role !== undefined && input.role !== UserRole.SUPERADMIN || input.status !== undefined && input.status !== 'ACTIVE');
+    if (removesLastSuperadmin) {
+      const activeSuperadmins = await db.user.count({ where: { role: UserRole.SUPERADMIN, status: 'ACTIVE' } });
+      if (activeSuperadmins <= 1) return res.status(400).json({ error: { code: 'LAST_SUPERADMIN', message: 'Create another active superadmin before removing this account’s access.' } });
+    }
+    const updated = await db.$transaction(async tx => {
+      const account = await tx.user.update({ where: { id: target.id }, data: input, select: managedUser });
+      await tx.auditLog.create({ data: { actorId: req.user!.id, action: 'USER_ACCESS_UPDATED', entityType: 'USER', entityId: account.id, metadata: { previousRole: target.role, previousStatus: target.status, role: account.role, status: account.status } } });
+      return account;
+    });
+    return res.json({ data: updated });
+  } catch (error) { next(error); }
+});
+router.post('/admin/users/:id/reset-password', requireRole(UserRole.SUPERADMIN), async (req, res, next) => {
+  try {
+    if (req.params.id === req.user!.id) return res.status(400).json({ error: { code: 'SELF_RESET_BLOCKED', message: 'Use your account settings to change your own password.' } });
+    const target = await db.user.findUnique({ where: { id: req.params.id }, select: { id: true, email: true } });
+    if (!target) return res.status(404).json({ error: { code: 'USER_NOT_FOUND', message: 'User not found.' } });
+    const temporaryPassword = `MT-${randomBytes(18).toString('base64url')}!`;
+    await db.$transaction(async tx => {
+      await tx.user.update({ where: { id: target.id }, data: { passwordHash: await hashPassword(temporaryPassword), mustChangePassword: true } });
+      await tx.auditLog.create({ data: { actorId: req.user!.id, action: 'USER_PASSWORD_RESET', entityType: 'USER', entityId: target.id, metadata: { forcedPasswordChange: true } } });
+    });
+    return res.json({ data: { email: target.email, temporaryPassword } });
+  } catch (error) { next(error); }
+});
 router.get('/admin/vendors', requireRole(UserRole.ADMIN, UserRole.SUPERADMIN), async (_req, res, next) => { try { res.json({ data: await db.vendorProfile.findMany({ include: { owner: { select: { email: true, firstName: true, lastName: true } } }, orderBy: { createdAt: 'desc' } }) }); } catch (error) { next(error); } });
 router.patch('/admin/vendors/:id', requireRole(UserRole.ADMIN, UserRole.SUPERADMIN), async (req, res, next) => { try { const { status } = z.object({ status: z.enum(VendorStatus) }).parse(req.body); const vendor = await db.vendorProfile.update({ where: { id: req.params.id }, data: { status } }); res.json({ data: vendor }); } catch (error) { next(error); } });
 router.get('/admin/compliance',requireRole(UserRole.STAFF,UserRole.ADMIN,UserRole.SUPERADMIN),async(req,res,next)=>{try{res.json({data:await db.vendorProfile.findMany({where:{status:VendorStatus.PENDING_REVIEW},include:{owner:{select:{email:true,firstName:true,lastName:true}},verificationDocuments:true},orderBy:{updatedAt:'asc'}})});}catch(error){next(error);}});
