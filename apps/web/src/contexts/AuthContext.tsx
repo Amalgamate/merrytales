@@ -7,6 +7,7 @@ export interface AuthUser {
   firstName: string;
   lastName: string;
   role: 'CUSTOMER' | 'VENDOR' | 'STUDIO' | 'STAFF' | 'ADMIN' | 'SUPERADMIN';
+  mustChangePassword: boolean;
 }
 
 interface AuthContextValue {

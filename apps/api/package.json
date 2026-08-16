@@ -8,7 +8,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "bootstrap:superadmin": "node dist/scripts/bootstrap-superadmin.js"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

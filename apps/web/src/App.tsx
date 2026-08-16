@@ -18,6 +18,7 @@ import { Checkout } from './pages/Checkout';
 import { Favorites } from './pages/Favorites';
 import { NotFound } from './pages/NotFound';
 import { Login } from './pages/Login';
+import { ChangePassword } from './pages/ChangePassword';
 import { Register } from './pages/Register';
 import { Gifts } from './pages/Gifts';
 import { Partners } from './pages/Partners';
@@ -91,6 +92,7 @@ function App() {
 
         {/* Focused authentication routes without marketplace navigation */}
         <Route path="/login" element={<Login />} />
+        <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/register" element={<Register />} />
         <Route path="/newsletter/confirm" element={<NewsletterAction action="confirm" />} />
         <Route path="/newsletter/unsubscribe" element={<NewsletterAction action="unsubscribe" />} />

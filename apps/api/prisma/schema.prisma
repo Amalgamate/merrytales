@@ -298,6 +298,7 @@ model User {
   email                         String                 @unique
   phone                         String?                @unique
   passwordHash                  String
+  mustChangePassword            Boolean                @default(false)
   firstName                     String
   lastName                      String
   role                          UserRole               @default(CUSTOMER)

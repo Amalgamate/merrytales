@@ -6,7 +6,7 @@ import { hashPassword, signAccessToken, verifyPassword } from '../lib/auth';
 import { requireAuth } from '../middleware/auth';
 
 const router = Router();
-const publicUser = { id: true, email: true, phone: true, firstName: true, lastName: true, role: true, locale: true } as const;
+const publicUser = { id: true, email: true, phone: true, firstName: true, lastName: true, role: true, locale: true, mustChangePassword: true } as const;
 
 const registerSchema = z.object({
   email: z.email().transform((value) => value.toLowerCase()),
@@ -67,6 +67,28 @@ router.get('/me', requireAuth, async (req, res, next) => {
     const user = await db.user.findUnique({ where: { id: req.user!.id }, select: publicUser });
     if (!user) return res.status(404).json({ error: { code: 'USER_NOT_FOUND', message: 'Account not found.' } });
     return res.json({ data: user });
+  } catch (error) { next(error); }
+});
+
+router.post('/change-password', requireAuth, async (req, res, next) => {
+  try {
+    const input = z.object({
+      currentPassword: z.string().min(1),
+      newPassword: z.string().min(16, 'Use at least 16 characters for your new password.').max(128),
+    }).parse(req.body);
+    const userRecord = await db.user.findUnique({ where: { id: req.user!.id } });
+    if (!userRecord || !(await verifyPassword(input.currentPassword, userRecord.passwordHash))) {
+      return res.status(401).json({ error: { code: 'INVALID_CREDENTIALS', message: 'Your current password is incorrect.' } });
+    }
+    if (await verifyPassword(input.newPassword, userRecord.passwordHash)) {
+      return res.status(400).json({ error: { code: 'PASSWORD_REUSED', message: 'Choose a different password from your temporary password.' } });
+    }
+    const user = await db.user.update({
+      where: { id: userRecord.id },
+      data: { passwordHash: await hashPassword(input.newPassword), mustChangePassword: false },
+      select: publicUser,
+    });
+    return res.json({ data: { user, accessToken: signAccessToken({ id: user.id, email: user.email, role: user.role }) } });
   } catch (error) { next(error); }
 });
 
