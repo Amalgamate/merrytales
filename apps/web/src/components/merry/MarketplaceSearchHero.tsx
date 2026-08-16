@@ -69,7 +69,7 @@ const heroSlides = [
     title: "Run remarkable events.",
     accent: "Grow serious business.",
     copy: "Onboard services, respond to briefs and manage corporate events, client gifting, quotes and delivery from one workspace.",
-    image: "/campaign/corporate-vendors.png",
+    image: "/Hero/Remarkable-events.png",
     alt: "A Kenyan event production team coordinating a premium corporate gala",
     label: "BUSINESS",
     cta: "Join as a vendor",
