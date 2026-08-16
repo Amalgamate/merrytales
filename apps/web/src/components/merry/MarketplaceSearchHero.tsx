@@ -81,6 +81,7 @@ const heroSlides = [
 function HeroHeading({ slide }: { slide: (typeof heroSlides)[number] }) {
   const headingClass =
     "max-w-[680px] text-balance font-display font-medium leading-[.92] tracking-[-.035em] text-[#101936]";
+  const isBusinessSlide = slide.label === "BUSINESS";
 
   if (slide.label === "DIASPORA") {
     return (
@@ -99,7 +100,11 @@ function HeroHeading({ slide }: { slide: (typeof heroSlides)[number] }) {
   return (
     <h1
       className={headingClass}
-      style={{ fontSize: "clamp(2.8rem, 4.5vw, 5rem)" }}
+      style={{
+        fontSize: isBusinessSlide
+          ? "clamp(2.4rem, 3.55vw, 4.25rem)"
+          : "clamp(2.8rem, 4.5vw, 5rem)",
+      }}
     >
       <span className="block">{slide.title}</span>
       <span className="mt-1 block text-[#ec3d83]">{slide.accent}</span>
