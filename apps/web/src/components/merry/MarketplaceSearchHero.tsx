@@ -212,7 +212,7 @@ export function MarketplaceSearchHero() {
   return (
     <section
       ref={heroRef}
-      className="relative isolate z-20 overflow-hidden bg-[#fff9f4] pb-10 text-[#101936] sm:pb-12"
+      className="hero-shell relative isolate z-20 overflow-hidden bg-[#fff9f4] pb-10 text-[#101936] sm:pb-12"
     >
       <div className="relative w-full">
         <div className="relative grid overflow-hidden lg:h-[min(700px,calc(100svh-120px))] lg:grid-cols-[.82fr_1.18fr] lg:items-stretch">
@@ -285,7 +285,7 @@ export function MarketplaceSearchHero() {
             <img
               src="/Hero/hero-bottom-flowers.png"
               alt=""
-              className="h-full w-full object-cover object-bottom opacity-55"
+              className="hero-floral-image h-full w-full object-cover object-bottom"
             />
           </div>
         </div>
