@@ -28,7 +28,7 @@ const heroSlides = [
     title: "Plan it your way.",
     accent: "Bring it beautifully to life.",
     copy: "Build a budget, discover trusted vendors and keep every decision, payment and detail together.",
-    image: "/campaign/plan-together.png",
+    image: "/Hero/Plan-it.png",
     alt: "A Kenyan couple and event planner coordinating an elegant outdoor celebration",
     label: "PLAN",
     cta: "Start planning",
@@ -201,10 +201,10 @@ export function MarketplaceSearchHero() {
       onWheel={shuffleOnWheel}
       className="relative isolate z-20 overflow-hidden bg-[#fff9f4] pb-10 text-[#101936] sm:pb-12"
     >
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="relative w-full">
         <div className="grid overflow-hidden lg:min-h-[min(700px,calc(100svh-120px))] lg:grid-cols-[.82fr_1.18fr] lg:items-stretch">
-          <div className="relative z-10 flex min-h-[490px] items-center py-14 sm:min-h-[530px] sm:py-[4.5rem] lg:min-h-0 lg:py-20">
-            <div className="w-full text-left">
+          <div className="relative z-10 flex min-h-[490px] items-center px-4 py-14 sm:min-h-[530px] sm:px-6 sm:py-[4.5rem] lg:min-h-0 lg:px-12 lg:py-20 xl:pl-[10vw]">
+            <div className="w-full max-w-[600px] text-left">
               <div
                 key={slide.title}
                 className="animate-in fade-in slide-in-from-bottom-4 duration-700"
@@ -268,7 +268,7 @@ export function MarketplaceSearchHero() {
 
         <form
           onSubmit={search}
-          className="hero-search relative z-30 mx-auto -mt-7 w-full max-w-6xl rounded-[1.15rem] border border-slate-200 bg-white/95 p-1.5 text-[#10172a] shadow-[0_16px_36px_rgba(16,23,42,.14)] backdrop-blur-sm sm:-mt-10 sm:rounded-[1.35rem] sm:p-2"
+          className="hero-search relative z-30 mx-auto -mt-7 w-[calc(100%-2rem)] max-w-6xl rounded-[1.15rem] border border-slate-200 bg-white/95 p-1.5 text-[#10172a] shadow-[0_16px_36px_rgba(16,23,42,.14)] backdrop-blur-sm sm:-mt-10 sm:w-[calc(100%-3rem)] sm:rounded-[1.35rem] sm:p-2 lg:w-[calc(100%-4rem)]"
         >
           <div className="grid lg:grid-cols-[1.55fr_.9fr_.85fr_auto]">
             <label className="hero-field relative flex items-center gap-3 rounded-xl px-3 py-3 text-[#10172a] focus-within:bg-pink-50/50 focus-within:ring-2 focus-within:ring-primary/25 sm:px-4 lg:border-r lg:border-slate-200">
@@ -341,7 +341,7 @@ export function MarketplaceSearchHero() {
           </div>
         </form>
 
-        <div className="hero-popular mx-auto mt-3 flex max-w-6xl items-center justify-start gap-2 overflow-x-auto pb-1 text-xs [scrollbar-width:none] sm:justify-center">
+        <div className="hero-popular mx-auto mt-3 flex w-[calc(100%-2rem)] max-w-6xl items-center justify-start gap-2 overflow-x-auto pb-1 text-xs [scrollbar-width:none] sm:w-[calc(100%-3rem)] sm:justify-center lg:w-[calc(100%-4rem)]">
           <span className="shrink-0 font-extrabold text-slate-500">
             Popular:
           </span>
