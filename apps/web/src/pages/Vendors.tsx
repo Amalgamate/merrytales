@@ -4,10 +4,11 @@ import { Calendar, Filter, Loader2, MapPin, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VendorCard } from '@/components/merry/VendorCard';
 import { PageHero } from '@/components/merry/PageHero';
-import { marketplaceCategories } from '@/data/marketplace';
+import { useMarketplaceCategories } from '@/hooks/useMarketplaceCategories';
 import { fetchVendors, toVendorCard, type VendorCardModel } from '@/lib/marketplace';
 
 export function Vendors() {
+  const { categories: marketplaceCategories } = useMarketplaceCategories();
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('');
   const [loading, setLoading] = useState(true);

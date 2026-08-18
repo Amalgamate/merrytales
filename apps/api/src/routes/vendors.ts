@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { ComplianceStatus, SubscriptionStatus, SubscriptionTier, UserRole, VendorStatus, VerificationDocumentType } from '@prisma/client';
 import { z } from 'zod';
 import { db } from '../db';
+import { signAccessToken } from '../lib/auth';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { MARKETPLACE_PLANS, PUBLICATION_REQUIRED_DOCUMENTS } from '../config/marketplace-plans';
 import { decryptMobileSasaToken, encryptMobileSasaToken, getMobileSasaBalances, sendMobileSasaMessage, topUpMobileSasaWallet } from '../services/mobilesasa';
@@ -14,6 +15,26 @@ async function vendorWithSmsConnection(ownerId: string) {
   return db.vendorProfile.findUnique({ where: { ownerId }, include: { smsConnection: true } });
 }
 
+function vendorSlug(input: string) {
+  return input.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'vendor';
+}
+
+async function uniqueVendorSlug(businessName: string) {
+  const baseSlug = vendorSlug(businessName);
+  let slug = baseSlug;
+  let suffix = 1;
+  while (await db.vendorProfile.findUnique({ where: { slug } })) slug = `${baseSlug}-${++suffix}`;
+  return slug;
+}
+
+const vendorOnboardingSchema = z.object({
+  businessName: z.string().trim().min(2).max(120),
+  category: z.string().trim().min(2).max(80),
+  city: z.string().trim().min(2).max(80),
+  description: z.string().trim().max(2000).optional(),
+  whatsapp: z.string().trim().min(9).max(20),
+});
+
 router.get('/account/sms/platform-settings', requireAuth, requireRole(UserRole.VENDOR), async (_req, res, next) => {
   try {
     const setting = await db.systemSetting.findUnique({ where: { key: 'mobilesasa' } });
@@ -24,6 +45,64 @@ router.get('/account/sms/platform-settings', requireAuth, requireRole(UserRole.V
 
 router.get('/plans', (_req,res)=>res.json({data:Object.entries(MARKETPLACE_PLANS).map(([tier,plan])=>({tier,...plan}))}));
 router.get('/account/me', requireAuth, async (req, res, next) => { try { const vendor = await db.vendorProfile.findUnique({ where: { ownerId: req.user!.id }, include: { services: true, reviews: true, verificationDocuments:true, subscriptions:{orderBy:{createdAt:'desc'},take:5} } }); if (!vendor) return res.status(404).json({ error: { code: 'VENDOR_NOT_FOUND', message: 'Vendor profile not found.' } }); return res.json({ data: vendor }); } catch (error) { next(error); } });
+router.post('/account/onboard', requireAuth, async (req, res, next) => {
+  try {
+    const input = vendorOnboardingSchema.parse(req.body);
+    const existing = await db.vendorProfile.findUnique({
+      where: { ownerId: req.user!.id },
+      include: { services: true, reviews: true, verificationDocuments: true, subscriptions: { orderBy: { createdAt: 'desc' }, take: 5 } },
+    });
+    const userRecord = await db.user.findUnique({
+      where: { id: req.user!.id },
+      select: { id: true, email: true, phone: true, firstName: true, lastName: true, role: true, status: true, locale: true, mustChangePassword: true },
+    });
+    if (!userRecord) return res.status(404).json({ error: { code: 'USER_NOT_FOUND', message: 'Account not found.' } });
+    if (existing) return res.json({
+      data: {
+        user: userRecord,
+        vendor: existing,
+        accessToken: signAccessToken({ id: userRecord.id, email: userRecord.email, role: userRecord.role, status: userRecord.status, mustChangePassword: userRecord.mustChangePassword }),
+      },
+    });
+    const slug = await uniqueVendorSlug(input.businessName);
+    const result = await db.$transaction(async (tx) => {
+      const user = await tx.user.update({
+        where: { id: userRecord.id },
+        data: { role: UserRole.VENDOR },
+        select: { id: true, email: true, phone: true, firstName: true, lastName: true, role: true, status: true, locale: true, mustChangePassword: true },
+      });
+      const vendor = await tx.vendorProfile.create({
+        data: {
+          ownerId: user.id,
+          businessName: input.businessName,
+          slug,
+          category: input.category,
+          city: input.city,
+          description: input.description,
+          whatsapp: input.whatsapp,
+          status: VendorStatus.DRAFT,
+        },
+        include: { services: true, reviews: true, verificationDocuments: true, subscriptions: { orderBy: { createdAt: 'desc' }, take: 5 } },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorId: user.id,
+          action: 'VENDOR_PROFILE_ONBOARDED',
+          entityType: 'VendorProfile',
+          entityId: vendor.id,
+          metadata: { previousRole: userRecord.role, businessName: vendor.businessName },
+        },
+      });
+      return { user, vendor };
+    });
+    return res.status(201).json({
+      data: {
+        ...result,
+        accessToken: signAccessToken({ id: result.user.id, email: result.user.email, role: result.user.role, status: result.user.status, mustChangePassword: result.user.mustChangePassword }),
+      },
+    });
+  } catch (error) { next(error); }
+});
 router.get('/account/compliance',requireAuth,requireRole(UserRole.VENDOR),async(req,res,next)=>{try{const vendor=await db.vendorProfile.findUnique({where:{ownerId:req.user!.id},include:{verificationDocuments:{orderBy:{createdAt:'desc'}},subscriptions:{orderBy:{createdAt:'desc'},take:5}}});if(!vendor)return res.status(404).json({error:{code:'VENDOR_NOT_FOUND',message:'Vendor profile not found.'}});const approved=new Set(vendor.verificationDocuments.filter(d=>d.status==='APPROVED'&&(!d.expiresAt||d.expiresAt>new Date())).map(d=>d.type));return res.json({data:{vendor,requirements:PUBLICATION_REQUIRED_DOCUMENTS.map(type=>({type,satisfied:approved.has(type)})),plan:MARKETPLACE_PLANS[vendor.subscriptionTier]}});}catch(error){next(error);}});
 router.post('/account/compliance/documents',requireAuth,requireRole(UserRole.VENDOR),async(req,res,next)=>{try{const input=z.object({type:z.enum(VerificationDocumentType),referenceNumber:z.string().trim().max(120).optional(),fileUrl:z.string().trim().min(1).max(500),issuedAt:z.iso.datetime().optional(),expiresAt:z.iso.datetime().optional()}).parse(req.body);const vendor=await db.vendorProfile.findUnique({where:{ownerId:req.user!.id}});if(!vendor)return res.status(404).json({error:{code:'VENDOR_NOT_FOUND',message:'Vendor profile not found.'}});const document=await db.verificationDocument.create({data:{vendorId:vendor.id,type:input.type,referenceNumber:input.referenceNumber,fileUrl:input.fileUrl,issuedAt:input.issuedAt?new Date(input.issuedAt):undefined,expiresAt:input.expiresAt?new Date(input.expiresAt):undefined}});await db.vendorProfile.update({where:{id:vendor.id},data:{status:VendorStatus.DRAFT}});return res.status(201).json({data:document});}catch(error){next(error);}});
 router.post('/account/compliance/submit',requireAuth,requireRole(UserRole.VENDOR),async(req,res,next)=>{try{const vendor=await db.vendorProfile.findUnique({where:{ownerId:req.user!.id},include:{verificationDocuments:true}});if(!vendor)return res.status(404).json({error:{code:'VENDOR_NOT_FOUND',message:'Vendor profile not found.'}});const supplied=new Set(vendor.verificationDocuments.filter(d=>d.status!=='REJECTED'&&(!d.expiresAt||d.expiresAt>new Date())).map(d=>d.type));const missing=PUBLICATION_REQUIRED_DOCUMENTS.filter(type=>!supplied.has(type));if(missing.length)return res.status(400).json({error:{code:'COMPLIANCE_DOCUMENTS_MISSING',message:`Upload: ${missing.join(', ')}`}});return res.json({data:await db.vendorProfile.update({where:{id:vendor.id},data:{status:VendorStatus.PENDING_REVIEW,taxComplianceStatus:ComplianceStatus.PENDING,etimsStatus:ComplianceStatus.PENDING}})});}catch(error){next(error);}});

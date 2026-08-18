@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, TrendingUp, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,11 +9,21 @@ import { marketplaceSubcategories } from '@/data/marketplace';
 
 export function VendorJoin() {
   const navigate = useNavigate();
-  const { setSession } = useAuth();
+  const { user, setSession } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [progress, setProgress] = useState<number | undefined>(undefined);
   const [error, setError] = useState('');
   const [form, setForm] = useState({ businessName:'', category:'Photography & Videography', firstName:'', lastName:'', email:'', phone:'', password:'', city:'Nairobi', description:'' });
+
+  useEffect(() => {
+    if (!user) return;
+    setForm((current) => ({
+      ...current,
+      firstName: current.firstName || user.firstName,
+      lastName: current.lastName || user.lastName,
+      email: current.email || user.email,
+    }));
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,6 +31,13 @@ export function VendorJoin() {
     setSubmitting(true);
     setProgress(15);
     try {
+      if (user) {
+        const data = await apiRequest<{user:AuthUser;accessToken:string}>('/vendors/account/onboard', { method:'POST', body:JSON.stringify({ businessName:form.businessName, category:form.category, city:form.city, whatsapp:form.phone.trim(), description:form.description||undefined }) });
+        setProgress(100);
+        if (data.user && data.accessToken) setSession(data.user,data.accessToken);
+        navigate('/vendor');
+        return;
+      }
       const data = await apiRequest<{user:AuthUser;accessToken:string}>('/auth/register/vendor', { method:'POST', body:JSON.stringify({ ...form, phone:form.phone.trim(), whatsapp:form.phone.trim(), description:form.description||undefined }) });
       setProgress(100); setSession(data.user,data.accessToken); navigate('/vendor');
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to submit vendor application.'); setProgress(undefined); }
@@ -87,6 +104,12 @@ export function VendorJoin() {
             
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && <div role="alert" className="rounded-xl bg-red-50 p-3 text-red-700">{error}</div>}
+              {user && (
+                <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 text-sm text-[#171735]">
+                  <p className="font-bold">Complete your vendor workspace</p>
+                  <p className="mt-1 text-gray-600">You are signed in as {user.email}. Add your business details and Merry Tales will attach a vendor profile to this account.</p>
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-bold">Business Name</label>
@@ -105,13 +128,15 @@ export function VendorJoin() {
                   <label className="text-sm font-bold">Contact First Name</label>
                   <Input required value={form.firstName} onChange={e=>setForm({...form,firstName:e.target.value})} placeholder="First name" className="bg-gray-50 h-12" />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold">Email Address</label>
-                  <Input required type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} placeholder="hello@business.com" className="bg-gray-50 h-12" />
-                </div>
+                {!user && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold">Email Address</label>
+                    <Input required type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} placeholder="hello@business.com" className="bg-gray-50 h-12" />
+                  </div>
+                )}
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><label className="space-y-2 text-sm font-bold">Contact Last Name<Input required value={form.lastName} onChange={e=>setForm({...form,lastName:e.target.value})} className="bg-gray-50 h-12"/></label><label className="space-y-2 text-sm font-bold">Phone / WhatsApp<Input required minLength={9} value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} className="bg-gray-50 h-12"/></label><label className="space-y-2 text-sm font-bold">City<Input required value={form.city} onChange={e=>setForm({...form,city:e.target.value})} className="bg-gray-50 h-12"/></label><label className="space-y-2 text-sm font-bold">Password<Input required minLength={10} type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} placeholder="At least 10 characters" className="bg-gray-50 h-12"/></label></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><label className="space-y-2 text-sm font-bold">Contact Last Name<Input required value={form.lastName} disabled={Boolean(user)} onChange={e=>setForm({...form,lastName:e.target.value})} className="bg-gray-50 h-12 disabled:text-gray-500"/></label><label className="space-y-2 text-sm font-bold">Phone / WhatsApp<Input required minLength={9} value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} className="bg-gray-50 h-12"/></label><label className="space-y-2 text-sm font-bold">City<Input required value={form.city} onChange={e=>setForm({...form,city:e.target.value})} className="bg-gray-50 h-12"/></label>{!user && <label className="space-y-2 text-sm font-bold">Password<Input required minLength={10} type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} placeholder="At least 10 characters" className="bg-gray-50 h-12"/></label>}</div>
               <label className="space-y-2 text-sm font-bold block">Business Description<textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} className="w-full min-h-24 bg-gray-50 border rounded-md p-3 font-normal"/></label>
               
               <Button 

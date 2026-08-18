@@ -351,6 +351,11 @@ model User {
   referralsMade                 Referral[]             @relation("ReferralReferrer")
   referralReceived              Referral[]             @relation("ReferralReferee")
   referralCredits               ReferralCredit[]
+  passwordResetToken            String?
+  passwordResetExpiresAt        DateTime?
+  emailVerified                 Boolean                @default(false)
+  emailVerifyToken              String?
+  emailVerifyExpiresAt          DateTime?
 }
 
 model Referral {

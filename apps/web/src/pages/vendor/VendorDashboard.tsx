@@ -548,9 +548,16 @@ export function VendorDashboard() {
                 <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
                   <h3 className="font-bold text-red-800">We couldn’t load your workspace</h3>
                   <p className="mt-1 text-sm text-red-700">{dashboardError}</p>
-                  <Button className="mt-4" onClick={() => window.location.reload()}>
-                    Try again
-                  </Button>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    {dashboardError.toLowerCase().includes("vendor profile not found") && (
+                      <Button onClick={() => navigate("/vendor/join")}>
+                        Complete vendor setup
+                      </Button>
+                    )}
+                    <Button variant="outline" onClick={() => window.location.reload()}>
+                      Try again
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <>

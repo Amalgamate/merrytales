@@ -1,10 +1,27 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarHeart, CheckSquare, ShoppingBag, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { apiRequest } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function Dashboard() {
   const { user } = useAuth();
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
+
+  async function resendVerification() {
+    setResending(true);
+    try {
+      await apiRequest('/auth/resend-verification', { method: 'POST' });
+      setResent(true);
+      setTimeout(() => setResent(false), 8000);
+    } catch {
+      // silently fail — user can try again
+    } finally {
+      setResending(false);
+    }
+  }
 
   const daysUntil = 345;
   const completedTasks = 12;
@@ -15,8 +32,25 @@ export function Dashboard() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pt-4">
-      
-      {/* Welcome Banner */}
+
+      {/* Email verification banner */}
+      {user && user.emailVerified === false && (
+        <div className="flex flex-col gap-2 rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-amber-800 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-bold text-sm">Verify your email address</p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Check your inbox for a verification link, or request a new one below.
+            </p>
+          </div>
+          <button
+            onClick={() => void resendVerification()}
+            disabled={resending || resent}
+            className="shrink-0 rounded-xl border border-amber-200 bg-white px-4 py-2 text-xs font-bold text-amber-800 hover:bg-amber-100 disabled:opacity-60"
+          >
+            {resent ? 'Email sent ✓' : resending ? 'Sending…' : 'Resend verification'}
+          </button>
+        </div>
+      )}
       <div className="bg-foreground text-white rounded-[30px] p-8 md:p-12 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -mr-20 -mt-20"></div>
         <div className="relative z-10">

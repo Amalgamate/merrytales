@@ -18,6 +18,7 @@ export function Checkout() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [delivery, setDelivery] = useState({ recipientName: '', recipientPhone: '', recipientEmail: '', county: 'Nairobi', addressLine: '', landmark: '', instructions: '', method: 'COURIER' });
+  // TODO: fetch from /api/orders/delivery-fees — server-side fee is authoritative at order creation
   const deliveryFee = ({ Nairobi: 500, Kiambu: 700, Mombasa: 1200 } as Record<string, number>)[delivery.county] ?? 1000;
   const payableTotal = total + (delivery.method === 'CUSTOMER_PICKUP' ? 0 : deliveryFee);
   

@@ -1,4 +1,5 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express';
+import { Prisma } from '@prisma/client';
 import { ZodError } from 'zod';
 
 export const notFound: RequestHandler = (_req, res) => {
@@ -9,6 +10,12 @@ export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   if (error instanceof ZodError) {
     return res.status(400).json({
       error: { code: 'VALIDATION_ERROR', message: 'Please check the submitted information.', details: error.flatten() },
+    });
+  }
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+    const fields = Array.isArray(error.meta?.target) ? error.meta.target.join(', ') : 'one of these details';
+    return res.status(409).json({
+      error: { code: 'DUPLICATE_RECORD', message: `An account or record already exists with ${fields}.` },
     });
   }
   console.error(error);
