@@ -2,19 +2,34 @@ import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { app } from '../src/app';
 
-// These tests use the real DB — they need DATABASE_URL set.
-// Skip gracefully if not available.
-const hasDb = Boolean(process.env.DATABASE_URL);
-const describeIf = (cond: boolean) => (cond ? describe : describe.skip);
+// Auth smoke tests require a real database connection.
+// They are skipped in CI unless DATABASE_URL points to a live DB
+// (i.e. not the stub value injected by tests/setup.ts).
+const stubDbUrl = 'postgresql://test:test@localhost:5432/test_db';
+const hasRealDb = Boolean(process.env.DATABASE_URL) && process.env.DATABASE_URL !== stubDbUrl;
+const describeWithDb = hasRealDb ? describe : describe.skip;
 
-describeIf(hasDb)('Auth routes — smoke tests', () => {
-  const uniqueEmail = () => `test-${Date.now()}@test.merrytales.co.ke`;
-
+// Health check has no DB dependency — always runs.
+describe('Health check', () => {
   it('GET /api/health returns ok', async () => {
     const res = await request(app).get('/api/health');
     expect(res.status).toBe(200);
     expect(res.body.data.status).toBe('ok');
   });
+});
+
+// Token / auth endpoint that needs no DB
+describe('Auth routes — no DB required', () => {
+  it('GET /api/auth/me returns 401 without a token', async () => {
+    const res = await request(app).get('/api/auth/me');
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe('UNAUTHENTICATED');
+  });
+});
+
+// These tests need a real connected database — skipped in CI without one.
+describeWithDb('Auth routes — DB smoke tests', () => {
+  const uniqueEmail = () => `test-${Date.now()}@test.merrytales.co.ke`;
 
   it('POST /api/auth/register creates a user and returns a token', async () => {
     const email = uniqueEmail();
@@ -62,10 +77,5 @@ describeIf(hasDb)('Auth routes — smoke tests', () => {
     });
     expect(res.status).toBe(200);
     expect(res.body.data.ok).toBe(true);
-  });
-
-  it('GET /api/auth/me returns 401 without token', async () => {
-    const res = await request(app).get('/api/auth/me');
-    expect(res.status).toBe(401);
   });
 });

@@ -4,6 +4,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    // Runs before any test file is imported — sets stub env vars so
+    // src/config.ts (which validates at module load time) doesn't throw.
+    setupFiles: ['./tests/setup.ts'],
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
     coverage: {
       provider: 'v8',
