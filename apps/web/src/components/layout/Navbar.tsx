@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Bell, Loader2, MapPin, Menu, Navigation, X, ShoppingCart, User, Heart, Search } from 'lucide-react';
+import { Bell, Loader2, MapPin, Menu, Navigation, X, ShoppingCart, User, Heart, Search, MessageCircle } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
@@ -76,6 +76,8 @@ export function Navbar() {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') new Notification('Merry Tales notifications are on', { body: 'We’ll alert you about important event and marketplace updates.' });
   };
+
+  const openAssistant = () => window.dispatchEvent(new Event('merry-tales:open-assistant'));
 
   const isActive = (path: string) => location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
 
@@ -288,9 +290,22 @@ export function Navbar() {
               <ShoppingCart className="h-5 w-5" />
               <span aria-label={`${itemCount} items in cart`} className="absolute -right-2 -top-2 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-extrabold text-white ring-2 ring-white">{itemCount > 99 ? '99+' : itemCount}</span>
             </Link>}
-            <Link to="/app" className="text-foreground hover:text-primary transition-colors">
+            <Link to="/app" className="relative text-foreground hover:text-primary transition-colors">
               <User className="h-5 w-5" />
+              {user && (
+                <span
+                  aria-label="Logged in"
+                  className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-white"
+                />
+              )}
             </Link>
+            <button
+              onClick={openAssistant}
+              aria-label="Open Merry assistant"
+              className="grid h-11 w-11 place-items-center rounded-full border-2 border-primary bg-transparent text-primary transition hover:-translate-y-0.5 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              <MessageCircle className="h-5 w-5" />
+            </button>
             <Link to="/create">
               <Button className="rounded-full px-6 font-semibold shadow-soft ml-2">
                 Start Planning
@@ -303,6 +318,13 @@ export function Navbar() {
             {unread > 0 && <button onClick={() => setPanel(panel === 'notifications' ? null : 'notifications')} className="relative text-foreground hover:text-primary transition-colors" aria-label={`${unread} unread notifications`}><Bell className="h-5 w-5" /><span className="absolute -right-2 -top-2 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-white" /></button>}
              <button onClick={() => setSearchOpen(true)} className="text-foreground hover:text-primary transition-colors" aria-label="Search MerryTales">
               <Search className="h-5 w-5" />
+            </button>
+            <button
+              onClick={openAssistant}
+              aria-label="Open Merry assistant"
+              className="grid h-10 w-10 place-items-center rounded-full border-2 border-primary bg-transparent text-primary transition hover:bg-primary/5"
+            >
+              <MessageCircle className="h-5 w-5" />
             </button>
             {itemCount > 0 && <Link to="/cart" className="text-foreground hover:text-primary transition-colors relative">
               <ShoppingCart className="h-5 w-5" />

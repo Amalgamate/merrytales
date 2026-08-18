@@ -21,7 +21,7 @@ export function VendorJoin() {
     setSubmitting(true);
     setProgress(15);
     try {
-      const data = await apiRequest<{user:AuthUser;accessToken:string}>('/auth/register/vendor', { method:'POST', body:JSON.stringify({ ...form, phone:form.phone||undefined, whatsapp:form.phone||undefined, description:form.description||undefined }) });
+      const data = await apiRequest<{user:AuthUser;accessToken:string}>('/auth/register/vendor', { method:'POST', body:JSON.stringify({ ...form, phone:form.phone.trim(), whatsapp:form.phone.trim(), description:form.description||undefined }) });
       setProgress(100); setSession(data.user,data.accessToken); navigate('/vendor');
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to submit vendor application.'); setProgress(undefined); }
     finally { setSubmitting(false); }
@@ -111,7 +111,7 @@ export function VendorJoin() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><label className="space-y-2 text-sm font-bold">Contact Last Name<Input required value={form.lastName} onChange={e=>setForm({...form,lastName:e.target.value})} className="bg-gray-50 h-12"/></label><label className="space-y-2 text-sm font-bold">Phone / WhatsApp<Input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} className="bg-gray-50 h-12"/></label><label className="space-y-2 text-sm font-bold">City<Input required value={form.city} onChange={e=>setForm({...form,city:e.target.value})} className="bg-gray-50 h-12"/></label><label className="space-y-2 text-sm font-bold">Password<Input required minLength={10} type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} placeholder="At least 10 characters" className="bg-gray-50 h-12"/></label></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><label className="space-y-2 text-sm font-bold">Contact Last Name<Input required value={form.lastName} onChange={e=>setForm({...form,lastName:e.target.value})} className="bg-gray-50 h-12"/></label><label className="space-y-2 text-sm font-bold">Phone / WhatsApp<Input required minLength={9} value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} className="bg-gray-50 h-12"/></label><label className="space-y-2 text-sm font-bold">City<Input required value={form.city} onChange={e=>setForm({...form,city:e.target.value})} className="bg-gray-50 h-12"/></label><label className="space-y-2 text-sm font-bold">Password<Input required minLength={10} type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} placeholder="At least 10 characters" className="bg-gray-50 h-12"/></label></div>
               <label className="space-y-2 text-sm font-bold block">Business Description<textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} className="w-full min-h-24 bg-gray-50 border rounded-md p-3 font-normal"/></label>
               
               <Button 

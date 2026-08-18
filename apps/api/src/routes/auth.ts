@@ -10,7 +10,7 @@ const publicUser = { id: true, email: true, phone: true, firstName: true, lastNa
 
 const registerSchema = z.object({
   email: z.email().transform((value) => value.toLowerCase()),
-  phone: z.string().min(9).max(20).optional(),
+  phone: z.string().trim().min(9).max(20),
   password: z.string().min(10).max(128),
   firstName: z.string().trim().min(2).max(60),
   lastName: z.string().trim().min(2).max(60),
@@ -26,7 +26,7 @@ async function nextReferralCode() {
 router.post('/register', async (req, res, next) => {
   try {
     const input = registerSchema.parse(req.body);
-    const existing = await db.user.findFirst({ where: { OR: [{ email: input.email }, ...(input.phone ? [{ phone: input.phone }] : [])] } });
+    const existing = await db.user.findFirst({ where: { OR: [{ email: input.email }, { phone: input.phone }] } });
     if (existing) return res.status(409).json({ error: { code: 'ACCOUNT_EXISTS', message: 'An account already exists with these details.' } });
     const { password, referralCode, ...profile } = input;
     const referrer = referralCode ? await db.user.findFirst({ where: { referralCode, role: UserRole.CUSTOMER, status: 'ACTIVE' } }) : null;
@@ -39,7 +39,7 @@ router.post('/register', async (req, res, next) => {
 router.post('/register/vendor', async (req, res, next) => {
   try {
     const input = registerSchema.extend({ businessName: z.string().trim().min(2).max(120), category: z.string().trim().min(2).max(80), city: z.string().trim().min(2).max(80), description: z.string().trim().max(2000).optional(), whatsapp: z.string().trim().max(20).optional() }).parse(req.body);
-    const existing = await db.user.findFirst({ where: { OR: [{ email: input.email }, ...(input.phone ? [{ phone: input.phone }] : [])] } });
+    const existing = await db.user.findFirst({ where: { OR: [{ email: input.email }, { phone: input.phone }] } });
     if (existing) return res.status(409).json({ error: { code: 'ACCOUNT_EXISTS', message: 'An account already exists with these details.' } });
     const baseSlug = input.businessName.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'vendor';
     let slug = baseSlug; let suffix = 1;
