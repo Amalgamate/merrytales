@@ -31,7 +31,7 @@ router.post('/chat', rateLimit({ windowMs: 60_000, limit: 12, standardHeaders: '
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
+        model: process.env.OPENAI_MODEL ?? 'gpt-4o',
         instructions: 'You are Merry, the concise event-planning assistant for Merry Tales, a Kenyan marketplace for all events. Help users clarify needs, budgets, vendors, gifts and next actions. Be warm, practical and corporate-natural. Prefer Kenya-relevant language and KSh when money is discussed. Never claim a booking, price, vendor availability or payment is confirmed. Ask at most one useful follow-up question. Keep answers under 120 words.',
         input: messages.map((message) => ({ role: message.role, content: message.content })),
         max_output_tokens: 350,

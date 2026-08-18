@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, ApiError } from '@/lib/api';
 
 export interface AuthUser {
   id: string;
@@ -8,6 +8,7 @@ export interface AuthUser {
   lastName: string;
   role: 'CUSTOMER' | 'VENDOR' | 'STUDIO' | 'STAFF' | 'ADMIN' | 'SUPERADMIN';
   mustChangePassword: boolean;
+  emailVerified?: boolean;
 }
 
 interface AuthContextValue {
@@ -24,7 +25,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (!localStorage.getItem('merry_tales_access_token')) { setLoading(false); return; }
-    apiRequest<AuthUser>('/auth/me').then(setUser).catch(() => localStorage.removeItem('merry_tales_access_token')).finally(() => setLoading(false));
+    apiRequest<AuthUser>('/auth/me')
+      .then(setUser)
+      .catch(async (err) => {
+        if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+          try {
+            const { accessToken } = await apiRequest<{ accessToken: string }>('/auth/refresh', { method: 'POST' });
+            localStorage.setItem('merry_tales_access_token', accessToken);
+            const me = await apiRequest<AuthUser>('/auth/me');
+            setUser(me);
+          } catch {
+            localStorage.removeItem('merry_tales_access_token');
+          }
+        } else {
+          localStorage.removeItem('merry_tales_access_token');
+        }
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const value = useMemo(
@@ -36,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(nextUser);
       },
       signOut() {
+        apiRequest('/auth/logout', { method: 'POST' }).catch(() => {});
         localStorage.removeItem('merry_tales_access_token');
         setUser(null);
       },

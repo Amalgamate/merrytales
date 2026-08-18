@@ -2,7 +2,11 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'crypt
 import { config } from '../config';
 
 const API_URL = 'https://api.mobilesasa.com';
-const encryptionKey = createHash('sha256').update(config.MOBILESASA_ENCRYPTION_KEY ?? config.JWT_SECRET).digest();
+function getEncryptionKey(): Buffer {
+  const key = config.MOBILESASA_ENCRYPTION_KEY;
+  if (!key) throw new Error('MOBILESASA_ENCRYPTION_KEY is not configured.');
+  return createHash('sha256').update(key).digest();
+}
 
 export interface MobileSasaBalances {
   smsBalance: number;
@@ -14,7 +18,7 @@ export interface MobileSasaBalances {
 
 export function encryptMobileSasaToken(token: string): string {
   const iv = randomBytes(12);
-  const cipher = createCipheriv('aes-256-gcm', encryptionKey, iv);
+  const cipher = createCipheriv('aes-256-gcm', getEncryptionKey(), iv);
   const encrypted = Buffer.concat([cipher.update(token, 'utf8'), cipher.final()]);
   return `${iv.toString('base64')}.${cipher.getAuthTag().toString('base64')}.${encrypted.toString('base64')}`;
 }
@@ -22,7 +26,7 @@ export function encryptMobileSasaToken(token: string): string {
 export function decryptMobileSasaToken(value: string): string {
   const [iv, tag, encrypted] = value.split('.');
   if (!iv || !tag || !encrypted) throw new Error('Invalid encrypted MobileSasa credential.');
-  const decipher = createDecipheriv('aes-256-gcm', encryptionKey, Buffer.from(iv, 'base64'));
+  const decipher = createDecipheriv('aes-256-gcm', getEncryptionKey(), Buffer.from(iv, 'base64'));
   decipher.setAuthTag(Buffer.from(tag, 'base64'));
   return Buffer.concat([decipher.update(Buffer.from(encrypted, 'base64')), decipher.final()]).toString('utf8');
 }

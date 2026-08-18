@@ -20,6 +20,9 @@ import { NotFound } from './pages/NotFound';
 import { Login } from './pages/Login';
 import { ChangePassword } from './pages/ChangePassword';
 import { Register } from './pages/Register';
+import { ForgotPassword } from './pages/ForgotPassword';
+import { ResetPassword } from './pages/ResetPassword';
+import { VerifyEmail } from './pages/VerifyEmail';
 import { Gifts } from './pages/Gifts';
 import { Partners } from './pages/Partners';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
@@ -94,6 +97,9 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/newsletter/confirm" element={<NewsletterAction action="confirm" />} />
         <Route path="/newsletter/unsubscribe" element={<NewsletterAction action="unsubscribe" />} />
 

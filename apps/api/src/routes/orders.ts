@@ -92,7 +92,14 @@ router.post('/', async (req, res, next) => {
     if (hasPhysicalItems && !input.delivery) return res.status(400).json({ error: { code: 'DELIVERY_REQUIRED', message: 'Add delivery details for physical items.' } });
     const items = input.items.map((item) => { const product = byId.get(item.productId)!; return { productId: product.id, name: product.name, quantity: item.quantity, unitPrice: product.price }; });
     const subtotal = items.reduce((sum, item) => sum + Number(item.unitPrice) * item.quantity, 0);
-    const deliveryFee = hasPhysicalItems && input.delivery!.method !== DeliveryMethod.CUSTOMER_PICKUP ? ({ Nairobi: 500, Kiambu: 700, Mombasa: 1200 }[input.delivery!.county] ?? 1000) : 0;
+    // Fetch delivery fees from SystemSettings, fall back to hardcoded defaults
+    const feeSettingRecord = await db.systemSetting.findUnique({ where: { key: 'delivery_fees' } });
+    const feesMap: Record<string, number> = (feeSettingRecord?.value && typeof feeSettingRecord.value === 'object' && !Array.isArray(feeSettingRecord.value))
+      ? (feeSettingRecord.value as Record<string, number>)
+      : { Nairobi: 500, Kiambu: 700, Mombasa: 1200, default: 1000 };
+    const deliveryFee = hasPhysicalItems && input.delivery!.method !== DeliveryMethod.CUSTOMER_PICKUP
+      ? (feesMap[input.delivery!.county] ?? feesMap.default ?? 1000)
+      : 0;
     const orderNumber = `MT-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
     const order = await db.$transaction(async (tx) => {
       const created = await tx.order.create({ data: { customerId: req.user!.id, orderNumber, subtotal, deliveryFee, total: subtotal + deliveryFee, items: { create: items }, productionJobs: { create: items.map((item) => ({ title: item.name })) } }, include: { items: true } });

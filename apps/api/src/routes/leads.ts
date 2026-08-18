@@ -8,6 +8,11 @@ const router = Router();
 router.post('/', async (req, res, next) => {
   try {
     const input = z.object({ vendorId: z.string(), name: z.string().min(2).max(100), email: z.email().optional(), phone: z.string().max(20).optional(), eventDate: z.iso.datetime().optional(), message: z.string().min(10).max(2000) }).parse(req.body);
+    if (!input.email && !input.phone) {
+      return res.status(400).json({ error: { code: 'CONTACT_REQUIRED', message: 'Provide at least an email or phone number.' } });
+    }
+    const vendor = await db.vendorProfile.findUnique({ where: { id: input.vendorId } });
+    if (!vendor) return res.status(404).json({ error: { code: 'VENDOR_NOT_FOUND', message: 'Vendor not found.' } });
     const lead = await db.lead.create({ data: { ...input, eventDate: input.eventDate ? new Date(input.eventDate) : undefined, conversation: { create: {} } }, include: { conversation: true } });
     res.status(201).json({ data: lead });
   } catch (error) { next(error); }

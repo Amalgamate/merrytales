@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { rateLimit } from 'express-rate-limit';
 import { allowedOrigins } from './config';
 import { authRouter } from './routes/auth';
@@ -19,6 +20,7 @@ import { assistantRouter } from './routes/assistant';
 import { engagementRouter } from './routes/engagement';
 import { referralsRouter } from './routes/referrals';
 import { settlementsRouter } from './routes/settlements';
+import { storiesRouter } from './routes/stories';
 import { errorHandler, notFound } from './middleware/errors';
 
 export const app = express();
@@ -29,6 +31,8 @@ app.use(express.json({ limit: '1mb' }));
 app.use('/api', rateLimit({ windowMs: 15 * 60_000, limit: 500, standardHeaders: 'draft-8', legacyHeaders: false }));
 app.use('/api/auth/login', rateLimit({ windowMs: 15 * 60_000, limit: 10, standardHeaders: 'draft-8', legacyHeaders: false }));
 app.use('/api/auth/register', rateLimit({ windowMs: 60 * 60_000, limit: 5, standardHeaders: 'draft-8', legacyHeaders: false }));
+app.use('/api/auth/forgot-password', rateLimit({ windowMs: 60 * 60_000, limit: 5, standardHeaders: 'draft-8', legacyHeaders: false }));
+app.use('/api/auth/resend-verification', rateLimit({ windowMs: 60 * 60_000, limit: 3, standardHeaders: 'draft-8', legacyHeaders: false }));
 
 app.get('/api/health', (_req, res) => res.json({ data: { status: 'ok', service: 'merry-tales-api' } }));
 app.use('/api/auth', authRouter);
@@ -42,6 +46,8 @@ app.use('/api/assistant', assistantRouter);
 app.use('/api/engagement', engagementRouter);
 app.use('/api/referrals', referralsRouter);
 app.use('/api/settlements', settlementsRouter);
+app.use('/api/stories', storiesRouter);
+app.use('/api/leads', rateLimit({ windowMs: 15 * 60_000, limit: 5, standardHeaders: 'draft-8', legacyHeaders: false }));
 app.use('/api/leads', leadsRouter);
 app.use('/api/operations', operationsRouter);
 app.use('/api/notifications', notificationsRouter);

@@ -1,3 +1,6 @@
+// DEPRECATED: Category data is now served from GET /api/products/categories
+// via the useMarketplaceCategories hook. This file is kept for type reference only.
+// Do not add new hardcoded categories here.
 export interface MarketplaceCategory { name:string; slug:string; description:string; subcategories:string[]; }
 export const marketplaceCategories:MarketplaceCategory[]=[
   {name:'Planning & Event Management',slug:'planning',description:'From a brief to flawless delivery.',subcategories:['Event Planners','Wedding Planners','Corporate Event Agencies','Conference Organizers','Day-of Coordinators','Ruracio & Traditional Ceremony Planners','Team Building Facilitators']},

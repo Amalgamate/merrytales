@@ -15,6 +15,7 @@ import { z } from "zod";
 import { db } from "../db";
 import { hashPassword } from "../lib/auth";
 import { requireAuth, requireRole } from "../middleware/auth";
+import { notifyUser } from "../services/notifications";
 
 const router = Router();
 router.use(requireAuth);
@@ -408,26 +409,39 @@ const managedUser = {
 router.get(
   "/admin/audit",
   requireRole(UserRole.SUPERADMIN),
-  async (_req, res, next) => {
+  async (req, res, next) => {
     try {
-      const items = await db.auditLog.findMany({
-        include: {
-          actor: {
-            select: {
-              firstName: true,
-              lastName: true,
-              email: true,
-              role: true,
-            },
+      const query = z.object({
+        page: z.coerce.number().int().positive().default(1),
+        limit: z.coerce.number().int().min(1).max(100).default(25),
+        from: z.iso.datetime().optional(),
+        to: z.iso.datetime().optional(),
+        action: z.string().trim().optional(),
+        entityType: z.string().trim().optional(),
+      }).parse(req.query);
+
+      const where = {
+        ...(query.from && { createdAt: { gte: new Date(query.from) } }),
+        ...(query.to && { createdAt: { lte: new Date(query.to) } }),
+        ...(query.action && { action: { contains: query.action, mode: 'insensitive' as const } }),
+        ...(query.entityType && { entityType: { contains: query.entityType, mode: 'insensitive' as const } }),
+      };
+
+      const [items, total] = await Promise.all([
+        db.auditLog.findMany({
+          where,
+          include: {
+            actor: { select: { firstName: true, lastName: true, email: true, role: true } },
           },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 250,
-      });
-      return res.json({ data: items });
-    } catch (error) {
-      next(error);
-    }
+          orderBy: { createdAt: 'desc' },
+          skip: (query.page - 1) * query.limit,
+          take: query.limit,
+        }),
+        db.auditLog.count({ where }),
+      ]);
+
+      return res.json({ data: items, meta: { page: query.page, limit: query.limit, total, pages: Math.ceil(total / query.limit) } });
+    } catch (error) { next(error); }
   },
 );
 router.get(
@@ -768,18 +782,41 @@ router.patch(
 router.get(
   "/admin/users",
   requireRole(UserRole.SUPERADMIN),
-  async (_req, res, next) => {
+  async (req, res, next) => {
     try {
-      res.json({
-        data: await db.user.findMany({
-          select: managedUser,
-          orderBy: { createdAt: "desc" },
-          take: 100,
+      const query = z.object({
+        page: z.coerce.number().int().positive().default(1),
+        limit: z.coerce.number().int().min(1).max(100).default(20),
+        search: z.string().trim().optional(),
+        role: z.enum(UserRole).optional(),
+        status: z.enum(['ACTIVE', 'SUSPENDED', 'PENDING_VERIFICATION']).optional(),
+      }).parse(req.query);
+
+      const where = {
+        ...(query.role && { role: query.role }),
+        ...(query.status && { status: query.status }),
+        ...(query.search && {
+          OR: [
+            { email: { contains: query.search, mode: 'insensitive' as const } },
+            { firstName: { contains: query.search, mode: 'insensitive' as const } },
+            { lastName: { contains: query.search, mode: 'insensitive' as const } },
+          ],
         }),
-      });
-    } catch (error) {
-      next(error);
-    }
+      };
+
+      const [items, total] = await Promise.all([
+        db.user.findMany({
+          where,
+          select: managedUser,
+          orderBy: { createdAt: 'desc' },
+          skip: (query.page - 1) * query.limit,
+          take: query.limit,
+        }),
+        db.user.count({ where }),
+      ]);
+
+      return res.json({ data: items, meta: { page: query.page, limit: query.limit, total, pages: Math.ceil(total / query.limit) } });
+    } catch (error) { next(error); }
   },
 );
 router.patch(
@@ -1073,28 +1110,144 @@ router.post(
 );
 router.get(
   "/admin/listings",
-  requireRole(UserRole.STAFF, UserRole.ADMIN, UserRole.SUPERADMIN),
+  requireRole(UserRole.ADMIN, UserRole.SUPERADMIN),
   async (req, res, next) => {
     try {
-      const { status } = z
-        .object({ status: z.enum(ListingModerationStatus).optional() })
+      const { status, page, limit } = z
+        .object({
+          status: z.enum(ListingModerationStatus).optional(),
+          page: z.coerce.number().int().min(1).default(1),
+          limit: z.coerce.number().int().min(1).max(50).default(20),
+        })
         .parse(req.query);
-      res.json({
-        data: await db.product.findMany({
-          where: status ? { moderationStatus: status } : {},
+      const skip = (page - 1) * limit;
+      const where = status ? { moderationStatus: status } : {};
+      const [total, items] = await Promise.all([
+        db.product.count({ where }),
+        db.product.findMany({
+          where,
           include: {
             vendor: {
-              select: {
-                businessName: true,
-                status: true,
-                taxComplianceStatus: true,
-                etimsStatus: true,
-              },
+              select: { businessName: true, slug: true, ownerId: true },
             },
           },
-          orderBy: { submittedAt: "asc" },
+          orderBy: { submittedAt: "desc" },
+          skip,
+          take: limit,
         }),
+      ]);
+      res.json({
+        data: items,
+        meta: { total, page, limit, pages: Math.ceil(total / limit) },
       });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+router.patch(
+  "/admin/listings/:id",
+  requireRole(UserRole.ADMIN, UserRole.SUPERADMIN),
+  async (req, res, next) => {
+    try {
+      const { moderationStatus, moderationReason } = z
+        .object({
+          moderationStatus: z.enum(ListingModerationStatus),
+          moderationReason: z.string().trim().max(2000).optional(),
+        })
+        .parse(req.body);
+
+      const product = await db.product.findUnique({
+        where: { id: req.params.id },
+        include: {
+          vendor: { select: { ownerId: true } },
+        },
+      });
+      if (!product)
+        return res.status(404).json({
+          error: { code: "LISTING_NOT_FOUND", message: "Listing not found." },
+        });
+
+      // Validate allowed transitions
+      const allowed: Partial<Record<ListingModerationStatus, ListingModerationStatus[]>> = {
+        [ListingModerationStatus.PENDING_REVIEW]: [
+          ListingModerationStatus.APPROVED,
+          ListingModerationStatus.REJECTED,
+          ListingModerationStatus.CHANGES_REQUIRED,
+        ],
+        [ListingModerationStatus.APPROVED]: [ListingModerationStatus.SUSPENDED],
+        [ListingModerationStatus.SUSPENDED]: [ListingModerationStatus.APPROVED],
+      };
+      const isArchive = moderationStatus === ListingModerationStatus.ARCHIVED;
+      const permittedTargets = allowed[product.moderationStatus] ?? [];
+      if (!isArchive && !permittedTargets.includes(moderationStatus))
+        return res.status(409).json({
+          error: {
+            code: "INVALID_MODERATION_TRANSITION",
+            message: `Cannot transition from ${product.moderationStatus} to ${moderationStatus}.`,
+          },
+        });
+
+      const isApproved = moderationStatus === ListingModerationStatus.APPROVED;
+      const isRejectedOrSuspended =
+        moderationStatus === ListingModerationStatus.REJECTED ||
+        moderationStatus === ListingModerationStatus.SUSPENDED;
+
+      const updated = await db.product.update({
+        where: { id: product.id },
+        data: {
+          moderationStatus,
+          moderationReason: moderationReason ?? null,
+          moderatedById: req.user!.id,
+          approvedAt: isApproved ? new Date() : null,
+          ...(isApproved && { isActive: true }),
+          ...(isRejectedOrSuspended && { isActive: false }),
+        },
+      });
+
+      // Notify the vendor owner
+      const ownerId = product.vendor?.ownerId;
+      if (ownerId) {
+        const notificationMap: Partial<
+          Record<
+            ListingModerationStatus,
+            { severity: "SUCCESS" | "WARNING" | "INFO"; title: string; body: string }
+          >
+        > = {
+          [ListingModerationStatus.APPROVED]: {
+            severity: "SUCCESS",
+            title: "Listing approved",
+            body: `Your listing "${product.name}" is now live on the marketplace.`,
+          },
+          [ListingModerationStatus.REJECTED]: {
+            severity: "WARNING",
+            title: "Listing not approved",
+            body: `Your listing "${product.name}" was not approved. ${moderationReason ? "Reason: " + moderationReason : "Contact support for details."}`,
+          },
+          [ListingModerationStatus.CHANGES_REQUIRED]: {
+            severity: "INFO",
+            title: "Changes required",
+            body: `Your listing "${product.name}" needs changes before it can go live. ${moderationReason ?? ""}`,
+          },
+          [ListingModerationStatus.SUSPENDED]: {
+            severity: "WARNING",
+            title: "Listing suspended",
+            body: `Your listing "${product.name}" has been suspended.`,
+          },
+        };
+        const notification = notificationMap[moderationStatus];
+        if (notification) {
+          await notifyUser(db, {
+            userId: ownerId,
+            title: notification.title,
+            body: notification.body,
+            severity: notification.severity,
+            category: "OPERATIONS",
+          });
+        }
+      }
+
+      res.json({ data: updated });
     } catch (error) {
       next(error);
     }
@@ -1300,6 +1453,40 @@ router.patch(
     } catch (error) {
       next(error);
     }
+  },
+);
+router.get(
+  "/admin/system-settings",
+  requireRole(UserRole.SUPERADMIN),
+  async (_req, res, next) => {
+    try {
+      const settings = await db.systemSetting.findMany({ orderBy: { key: "asc" } });
+      return res.json({ data: settings });
+    } catch (error) { next(error); }
+  },
+);
+router.put(
+  "/admin/system-settings/:key",
+  requireRole(UserRole.SUPERADMIN),
+  async (req, res, next) => {
+    try {
+      const input = z.object({ value: z.any() }).parse(req.body);
+      const setting = await db.systemSetting.upsert({
+        where: { key: req.params.key },
+        create: { key: req.params.key, value: input.value },
+        update: { value: input.value },
+      });
+      await db.auditLog.create({
+        data: {
+          actorId: req.user!.id,
+          action: "SYSTEM_SETTING_UPDATED",
+          entityType: "SystemSetting",
+          entityId: req.params.key,
+          metadata: { key: req.params.key },
+        },
+      });
+      return res.json({ data: setting });
+    } catch (error) { next(error); }
   },
 );
 export { router as operationsRouter };

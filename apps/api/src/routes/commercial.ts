@@ -2,7 +2,7 @@ import { randomBytes } from 'crypto';
 import { InvoiceStatus, UserRole, VendorQuoteStatus } from '@prisma/client';
 import { Router } from 'express';
 import { z } from 'zod';
-import { allowedOrigins } from '../config';
+import { primaryWebOrigin } from '../config';
 import { db } from '../db';
 import { requireAuth, requireRole } from '../middleware/auth';
 
@@ -12,7 +12,7 @@ const lineSchema = z.object({ description: z.string().trim().min(2).max(240), qu
 const publicInclude = { lines: { orderBy: { sortOrder: 'asc' as const } }, vendor: { select: { businessName: true, slug: true, category: true, city: true, whatsapp: true, status: true } }, invoice: true };
 const maskPhone = (phone: string) => phone.length > 4 ? `${'*'.repeat(Math.max(4, phone.length - 4))}${phone.slice(-4)}` : '****';
 const phoneDigits = (phone: string) => phone.replace(/\D/g, '').replace(/^0/, '254');
-const webOrigin = allowedOrigins[0] ?? 'http://localhost:5173';
+const webOrigin = primaryWebOrigin;
 const isDecisionFinal = (status: VendorQuoteStatus) => status === VendorQuoteStatus.ACCEPTED || status === VendorQuoteStatus.DECLINED;
 const isClosed = (status: VendorQuoteStatus) => isDecisionFinal(status) || status === VendorQuoteStatus.CANCELLED;
 

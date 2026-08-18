@@ -14,7 +14,9 @@ const configSchema = z.object({
   MPESA_PASSKEY: z.string().optional(),
   MPESA_CALLBACK_URL: z.string().url().optional(),
   MOBILESASA_ENCRYPTION_KEY: z.string().min(32).optional(),
+  OPENAI_MODEL: z.string().optional(),
 });
 
 export const config = configSchema.parse(process.env);
 export const allowedOrigins = config.WEB_ORIGIN.split(',').map((origin) => origin.trim());
+export const primaryWebOrigin = allowedOrigins[0] ?? 'http://localhost:5173';
