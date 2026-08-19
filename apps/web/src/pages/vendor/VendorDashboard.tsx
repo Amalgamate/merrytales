@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, Calendar, MessageSquare, Settings, Bell, Boxes, WalletCards, Radio, ExternalLink, RefreshCw, Menu, PanelLeftClose, PanelLeftOpen, Search, ChevronDown, Plus, Store, LogOut, HelpCircle, X, ArrowRight, CheckCircle2, Sparkles, Package, Wrench, KeyRound, Layers3, MapPin, Clock3, Trash2, Truck, FileText } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, MessageSquare, Settings, Bell, Boxes, WalletCards, Radio, ExternalLink, RefreshCw, Menu, PanelLeftClose, PanelLeftOpen, Search, ChevronDown, Plus, Store, LogOut, HelpCircle, X, ArrowRight, CheckCircle2, Sparkles, Package, Wrench, KeyRound, Layers3, MapPin, Clock3, Trash2, Truck, FileText, FileCheck2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiRequest } from "@/lib/api";
@@ -8,6 +8,18 @@ import { VendorDeliveries } from "./VendorDeliveries";
 import { VendorSales } from "./VendorSales";
 import { useAuth } from "@/contexts/AuthContext";
 
+interface VerificationDocument {
+  id: string;
+  type: string;
+  referenceNumber?: string;
+  fileUrl: string;
+  issuedAt?: string;
+  expiresAt?: string;
+  status: string;
+  reviewNotes?: string;
+  createdAt: string;
+  reviewedAt?: string;
+}
 interface VendorAccount {
   businessName: string;
   slug?: string;
@@ -19,6 +31,7 @@ interface VendorAccount {
   city: string;
   whatsapp?: string;
   startingPrice?: number;
+  verificationDocuments?: VerificationDocument[];
 }
 interface VendorMessage {
   id: string;
@@ -95,6 +108,9 @@ export function VendorDashboard() {
     senderId: "",
     testPhone: "",
   });
+  const [docForm, setDocForm] = useState({ type: 'IDENTITY', referenceNumber: '', fileUrl: '', issuedAt: '', expiresAt: '' });
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [docError, setDocError] = useState('');
   const [topUp, setTopUp] = useState({ phone: "", amount: "500" });
   const [smsNotice, setSmsNotice] = useState("");
   const [smsError, setSmsError] = useState("");
@@ -175,6 +191,45 @@ export function VendorDashboard() {
     });
     setVendor(updated);
     setNotice("Storefront profile saved.");
+  };
+  const uploadDocument = async () => {
+    setDocError('');
+    if (!docForm.type || !docForm.fileUrl) {
+      setDocError('Choose a document type and provide a file URL.');
+      return;
+    }
+    setUploadingDoc(true);
+    try {
+      await apiRequest('/vendors/account/compliance/documents', {
+        method: 'POST',
+        body: JSON.stringify({
+          type: docForm.type,
+          referenceNumber: docForm.referenceNumber || undefined,
+          fileUrl: docForm.fileUrl,
+          issuedAt: docForm.issuedAt || undefined,
+          expiresAt: docForm.expiresAt || undefined,
+        }),
+      });
+      const refreshed = await apiRequest<VendorAccount>('/vendors/account/me');
+      setVendor(refreshed);
+      setDocForm({ type: 'IDENTITY', referenceNumber: '', fileUrl: '', issuedAt: '', expiresAt: '' });
+      setNotice('Document uploaded.');
+    } catch (cause) {
+      setDocError(cause instanceof Error ? cause.message : 'Unable to upload document.');
+    } finally {
+      setUploadingDoc(false);
+    }
+  };
+  const submitForReview = async () => {
+    setDocError('');
+    try {
+      const result = await apiRequest('/vendors/account/compliance/submit', { method: 'POST' });
+      const refreshed = await apiRequest<VendorAccount>('/vendors/account/me');
+      setVendor(refreshed);
+      setNotice('Submitted for compliance review.');
+    } catch (cause) {
+      setDocError(cause instanceof Error ? cause.message : 'Unable to submit for review.');
+    }
   };
   const addListing = async () => {
     if (!listingDraft.name || !listingDraft.category) return;
@@ -338,6 +393,7 @@ export function VendorDashboard() {
     { id: "messages", label: "Messages", icon: MessageSquare },
     { id: "profile", label: "Premium shop", icon: Settings },
     { id: "listings", label: "Products & services", icon: Boxes },
+    { id: "compliance", label: "Documents", icon: FileCheck2 },
     { id: "sales", label: "Quotes & invoices", icon: FileText },
     { id: "deliveries", label: "Delivery desk", icon: Truck },
     { id: "sms", label: "MobileSasa SMS", icon: Radio },
@@ -1125,6 +1181,107 @@ export function VendorDashboard() {
                   Save shop
                 </Button>
               </div>
+            </div>
+          )}
+          {activeTab === "compliance" && (
+            <div className="max-w-6xl mx-auto space-y-6">
+              <section className="rounded-3xl bg-white border p-6">
+                <h3 className="text-xl font-bold">Compliance documents</h3>
+                <p className="text-sm text-gray-500 mt-1">Upload required verification documents and submit them for review.</p>
+                <div className="mt-4 space-y-4">
+                  {(vendor?.verificationDocuments?.length ?? 0) > 0 ? (
+                    vendor!.verificationDocuments!.map((doc) => (
+                      <div key={doc.id} className="p-3 border rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <strong className="block">{doc.type}</strong>
+                            <p className="text-xs text-gray-500">{doc.referenceNumber ?? 'No reference'}</p>
+                            <p className="text-xs text-gray-400 mt-1">Uploaded: {new Date(doc.createdAt).toLocaleDateString()}</p>
+                          </div>
+                          <div className="text-right">
+                            <span className={`rounded-full px-3 py-1 text-xs font-bold ${doc.status === 'APPROVED' ? 'bg-green-50 text-green-700' : doc.status === 'REJECTED' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>{doc.status}</span>
+                            <div className="mt-2 text-xs">
+                              {doc.fileUrl && (
+                                <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="text-primary underline">View file</a>
+                              )}
+                              {doc.reviewNotes && <p className="mt-2 text-xs text-gray-600">Notes: {doc.reviewNotes}</p>}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-gray-500">No compliance documents uploaded yet.</div>
+                  )}
+                </div>
+                <div className="mt-6">
+                  <h4 className="font-bold">Upload document</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                    <label className="text-sm">
+                      Type
+                      <select value={docForm.type} onChange={(e) => setDocForm({ ...docForm, type: e.target.value })} className="mt-2 h-12 w-full rounded-xl border px-3">
+                        <option>IDENTITY</option>
+                        <option>BUSINESS_REGISTRATION</option>
+                        <option>KRA_PIN</option>
+                        <option>TAX_COMPLIANCE_CERTIFICATE</option>
+                        <option>ETIMS_PROOF</option>
+                        <option>BANK_OR_MPESA_PROOF</option>
+                        <option>INSURANCE</option>
+                        <option>OTHER</option>
+                      </select>
+                    </label>
+                    <label className="text-sm">
+                      Reference number
+                      <Input value={docForm.referenceNumber} onChange={(e) => setDocForm({ ...docForm, referenceNumber: e.target.value })} className="mt-2 h-12 rounded-xl" placeholder="Optional reference" />
+                    </label>
+                    <label className="text-sm">
+                      File URL
+                      <div className="mt-2">
+                                <input type="file" accept="image/*,application/pdf,video/*,audio/*" onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  setUploadingDoc(true);
+                                  setDocError('');
+                                  try {
+                                    const form = new FormData();
+                                    form.append('file', file);
+                                    const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api');
+                                    const token = localStorage.getItem('merry_tales_access_token');
+                                    const res = await fetch(`${API_URL}/uploads`, { method: 'POST', body: form, credentials: 'include', headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+                                    const payload = await res.json().catch(() => ({}));
+                                    if (!res.ok) throw new Error(payload.error?.message || 'Upload failed');
+                                    const asset = payload.data;
+                                    setDocForm({ ...docForm, fileUrl: asset.url });
+                                    setNotice('File uploaded to assets.');
+                                  } catch (err) {
+                                    setDocError(err instanceof Error ? err.message : 'Upload failed');
+                                  } finally {
+                                    setUploadingDoc(false);
+                                  }
+                                }} className="mt-2" />
+                                {docForm.fileUrl && (
+                                  <div className="mt-2">
+                                    <a href={docForm.fileUrl} target="_blank" rel="noreferrer" className="text-primary underline">View file</a>
+                                  </div>
+                                )}
+                              </div>
+                    </label>
+                    <label className="text-sm">
+                      Issued at
+                      <Input type="date" value={docForm.issuedAt} onChange={(e) => setDocForm({ ...docForm, issuedAt: e.target.value })} className="mt-2 h-12 rounded-xl" />
+                    </label>
+                    <label className="text-sm md:col-span-2">
+                      Expires at
+                      <Input type="date" value={docForm.expiresAt} onChange={(e) => setDocForm({ ...docForm, expiresAt: e.target.value })} className="mt-2 h-12 rounded-xl" />
+                    </label>
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <Button disabled={uploadingDoc} onClick={() => void uploadDocument()}>{uploadingDoc ? 'Uploading…' : 'Upload document'}</Button>
+                    <Button variant="outline" onClick={() => void submitForReview()} disabled={(vendor?.verificationDocuments?.length ?? 0) === 0}>Submit for review</Button>
+                  </div>
+                  {docError && <div role="alert" className="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">{docError}</div>}
+                </div>
+              </section>
             </div>
           )}
           {activeTab === "sms" && (
