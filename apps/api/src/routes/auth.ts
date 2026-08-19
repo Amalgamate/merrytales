@@ -87,7 +87,7 @@ router.post('/register/vendor', async (req, res, next) => {
     let slug = baseSlug; let suffix = 1;
     while (await db.vendorProfile.findUnique({ where: { slug } })) slug = `${baseSlug}-${++suffix}`;
     const passwordHash = await hashPassword(input.password);
-    const user = await db.user.create({ data: { email: input.email, phone: input.phone, passwordHash, firstName: input.firstName, lastName: input.lastName, role: UserRole.VENDOR, vendor: { create: { businessName: input.businessName, slug, category: input.category, city: input.city, description: input.description, whatsapp: input.whatsapp, status: VendorStatus.DRAFT } } }, select: publicUser });
+    const user = await db.user.create({ data: { email: input.email, phone: input.phone, passwordHash, firstName: input.firstName, lastName: input.lastName, role: UserRole.VENDOR, vendor: { create: { businessName: input.businessName, slug, category: input.category, city: input.city, description: input.description, whatsapp: input.whatsapp, status: VendorStatus.PENDING_REVIEW } } }, select: publicUser });
     const accessToken = signAccessToken({ id: user.id, email: user.email, role: user.role, status: user.status, mustChangePassword: user.mustChangePassword });
     const refreshRaw = await issueRefreshToken(user.id);
     res.cookie(REFRESH_COOKIE, refreshRaw, cookieOptions(config.NODE_ENV === 'production'));

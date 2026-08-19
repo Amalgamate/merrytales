@@ -1009,43 +1009,16 @@ router.patch(
           reviewNotes: z.string().trim().max(2000).optional(),
         })
         .parse(req.body);
-      const updated = await db.verificationDocument.update({
-        where: { id: req.params.id },
-        data: {
-          ...input,
-          reviewedById: req.user!.id,
-          reviewedAt: new Date(),
-        },
+      res.json({
+        data: await db.verificationDocument.update({
+          where: { id: req.params.id },
+          data: {
+            ...input,
+            reviewedById: req.user!.id,
+            reviewedAt: new Date(),
+          },
+        }),
       });
-      // Audit log
-      await db.auditLog.create({
-        data: {
-          actorId: req.user!.id,
-          action: 'VERIFICATION_DOCUMENT_REVIEWED',
-          entityType: 'VerificationDocument',
-          entityId: updated.id,
-          metadata: { status: updated.status, reviewNotes: updated.reviewNotes, vendorId: updated.vendorId },
-        },
-      });
-      // Notify vendor owner
-      try {
-        const vendor = await db.vendorProfile.findUnique({ where: { id: updated.vendorId }, select: { ownerId: true } });
-        if (vendor?.ownerId) {
-          await notifyUser(db, {
-            userId: vendor.ownerId,
-            title: `Document ${updated.type} ${updated.status.toLowerCase()}`,
-            body:
-              updated.status === 'APPROVED'
-                ? `Your ${updated.type} document was approved. ${updated.reviewNotes ?? ''}`
-                : `Your ${updated.type} document was rejected. ${updated.reviewNotes ?? ''}`,
-            severity: updated.status === 'APPROVED' ? 'SUCCESS' : 'WARNING',
-            category: 'COMPLIANCE',
-          });
-        }
-      } catch (notifyErr) {
-        // non-blocking
-      }
-      return res.json({ data: updated });
     } catch (error) {
       next(error);
     }
@@ -1100,77 +1073,36 @@ router.post(
           (d) =>
             d.type === "TAX_COMPLIANCE_CERTIFICATE" && d.status === "APPROVED",
         );
-        const updatedVendor = await db.vendorProfile.update({
+        return res.json({
+          data: await db.vendorProfile.update({
+            where: { id: vendor.id },
+            data: {
+              status: VendorStatus.VERIFIED,
+              taxComplianceStatus: ComplianceStatus.VERIFIED,
+              etimsStatus: ComplianceStatus.VERIFIED,
+              taxComplianceExpiresAt: tcc?.expiresAt,
+              verifiedAt: new Date(),
+              verificationNotes: input.notes,
+            },
+          }),
+        });
+      }
+      return res.json({
+        data: await db.vendorProfile.update({
           where: { id: vendor.id },
           data: {
-            status: VendorStatus.VERIFIED,
-            taxComplianceStatus: ComplianceStatus.VERIFIED,
-            etimsStatus: ComplianceStatus.VERIFIED,
-            taxComplianceExpiresAt: tcc?.expiresAt,
-            verifiedAt: new Date(),
+            status:
+              input.decision === "SUSPEND"
+                ? VendorStatus.SUSPENDED
+                : VendorStatus.REJECTED,
+            taxComplianceStatus:
+              input.decision === "SUSPEND"
+                ? vendor.taxComplianceStatus
+                : ComplianceStatus.REJECTED,
             verificationNotes: input.notes,
           },
-        });
-        // Audit log
-        await db.auditLog.create({
-          data: {
-            actorId: req.user!.id,
-            action: 'VENDOR_VERIFIED',
-            entityType: 'VendorProfile',
-            entityId: updatedVendor.id,
-            metadata: { previousStatus: vendor.status, verificationNotes: input.notes },
-          },
-        });
-        // Notify vendor owner
-        try {
-          await notifyUser(db, {
-            userId: updatedVendor.ownerId,
-            title: 'Vendor verified',
-            body: `Your vendor profile "${updatedVendor.businessName}" has been verified and is now live on the marketplace.`,
-            severity: 'SUCCESS',
-            category: 'COMPLIANCE',
-          });
-        } catch (notifyErr) {
-          // non-blocking
-        }
-        return res.json({ data: updatedVendor });
-      }
-      const updatedVendor = await db.vendorProfile.update({
-        where: { id: vendor.id },
-        data: {
-          status:
-            input.decision === "SUSPEND"
-              ? VendorStatus.SUSPENDED
-              : VendorStatus.REJECTED,
-          taxComplianceStatus:
-            input.decision === "SUSPEND"
-              ? vendor.taxComplianceStatus
-              : ComplianceStatus.REJECTED,
-          verificationNotes: input.notes,
-        },
+        }),
       });
-      // Audit log for reject/suspend
-      await db.auditLog.create({
-        data: {
-          actorId: req.user!.id,
-          action: input.decision === 'SUSPEND' ? 'VENDOR_SUSPENDED' : 'VENDOR_REJECTED',
-          entityType: 'VendorProfile',
-          entityId: updatedVendor.id,
-          metadata: { previousStatus: vendor.status, verificationNotes: input.notes },
-        },
-      });
-      try {
-        await notifyUser(db, {
-          userId: updatedVendor.ownerId,
-          title: input.decision === 'SUSPEND' ? 'Vendor suspended' : 'Vendor rejected',
-          body: input.decision === 'SUSPEND' ? `Your vendor profile "${updatedVendor.businessName}" has been suspended.` : `Your vendor profile "${updatedVendor.businessName}" has been rejected. ${input.notes ?? ''}`,
-          severity: input.decision === 'SUSPEND' ? 'WARNING' : 'CRITICAL',
-          category: 'COMPLIANCE',
-        });
-      } catch (notifyErr) {
-        // non-blocking
-      }
-      return res.json({ data: updatedVendor });
     } catch (error) {
       next(error);
     }
